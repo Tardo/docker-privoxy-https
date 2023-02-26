@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "docker-privoxy-https"
+version = "0.1.0"
+description = ""
+authors = ["Alexandre D. Díaz <dev@redneboa.es>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-on-whales = "^0.59.0"
+pytest = "^7.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
