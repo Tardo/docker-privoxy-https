@@ -2,32 +2,52 @@
 
 ## :page_with_curl: About
 
-Alpine docker with [privoxy](https://www.privoxy.org) enabled to work with HTTPS.
+Alpine docker with [privoxy](https://www.privoxy.org) enabled and configured to work with HTTPS.
+
+**The default configuration is intended for personal use only (ex. raspberry)**
 
 ## :bulb: Documentation
 
 This image downloads the 'trustedCAs' file from curl.se and also generates the ca-bundle file. So, you only need copy the 'ca-bundle' file and install it on your browser/system.
 
-1. Start to use this image with:
-   
-   `docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy-ca:/usr/local/etc/privoxy/CA -v privoxy-certs:/usr/local/etc/privoxy/certs ghtardo/docker-privoxy-https`
+### Docker
+```sh
+docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy:/usr/local/etc/privoxy ghtardo/docker-privoxy-https
+```
 
-2. Get the 'ca-bundle' file with:
 
-   `docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .`
+### Docker Compose
+```yml
+version: "3"
 
-## :triangular_ruler: Env. Variables
+services:
+  privoxy:
+    image: ghtardo/docker-privoxy-https
+    container_name: privoxy
+    ports:
+      - 8118:8118
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - privoxy:/usr/local/etc/privoxy
+    restart: unless-stopped
+    hostname: "privoxy"
 
-| Name | Description | Default |
-|------|-------------|---------|
-| FORCE_REFRESH_TRUSTED_CA | Force the download of the trustedCAs file | false |
-| FORCE_GEN_CERT_BUNDLE | Force the generation of the privoxy-ca-bundle.crt file | false |
-| CERT_COUNTRY_CODE | The country code used for the 'ca-bundle' file | ES |
-| CERT_STATE | The state used for the 'ca-bundle' file | Madrid |
-| CERT_LOCATION | The location used for the 'ca-bundle' file | Madrid |
-| CERT_ORG | The organization used for the 'ca-bundle' file | DockerPrivoxy |
-| CERT_ORG_UNIT | The organization unit used for the 'ca-bundle' file | PROXY |
-| CERT_CN | The common name used for the 'ca-bundle' file | privoxy.proxy |
+volumes:
+    privoxy:
+```
+
+### Get ca-bundle
+```sh
+docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
+```
+
+## :triangular_ruler: Privoxy Manager Script (privman)
+
+- Update the Trusted CA file: `docker exec privoxy privman --update-trusted-ca`
+- Regenerate the .crt bundle: `docker exec privoxy privman --regenerate-crt-bundle`
+- Block a domain to the blacklist: `docker exec privoxy privman --add-blacklist .google. .facebook.`
+- Remove a domain from the blacklist: `docker exec privoxy privman --remove-blacklist .facebook.`
 
 ## :bookmark: Points of Interest
 

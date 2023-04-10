@@ -1,6 +1,4 @@
 FROM alpine:latest
-MAINTAINER tardo
-
 
 RUN set -eux; \
     addgroup --gid 7777 --system privoxy; \
@@ -42,41 +40,39 @@ RUN set -eux; \
     make -s install USER=privoxy GROUP=privoxy;
 
 RUN set -eux; \
-    yes | rm -r /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
+    rm -rf /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     apk del build-tools;
 
 RUN set -eux; \
     apk add --no-cache --virtual sys-tools \
-    openssl;
+        openssl \
+        python3 \
+        supervisor; \
+    python -m ensurepip; \
+    pip3 install --no-cache --upgrade pip setuptools;
 
 RUN set -eux; \
-    mkdir -p /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs; \
-    chown privoxy:privoxy /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs; \
     mv /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \
     sed -i '/^+set-image-blocker{pattern}/a +https-inspection \\' /usr/local/etc/privoxy/match-all.action;
 
+COPY rules/ /usr/local/etc/privoxy/privman-rules
+COPY supervisord.conf /usr/local/etc/privoxy/
 COPY config /usr/local/etc/privoxy/
 
-VOLUME /usr/local/etc/privoxy/CA
-VOLUME /usr/local/etc/privoxy/certs
+RUN set -eux; \
+    mkdir -p /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules; \
+    chown -R privoxy:privoxy /usr/local/etc/privoxy/config /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules;
 
-EXPOSE 8118
-
-ENV FORCE_REFRESH_TRUSTED_CA=false \
-    FORCE_GEN_CERT_BUNDLE=false \
-    CERT_COUNTRY_CODE=ES \
-    CERT_STATE=Madrid \
-    CERT_LOCATION=Madrid \
-    CERT_ORG=DockerPrivoxy \
-    CERT_ORG_UNIT=PROXY \
-    CERT_CN=privoxy.proxy
-
+COPY bin/privman /usr/local/bin/
 COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod a+x /usr/local/bin/privman /usr/local/bin/docker-entrypoint.sh;
+
 ENTRYPOINT ["docker-entrypoint.sh"]
+
+VOLUME /usr/local/etc/privoxy
+EXPOSE 8118/tcp
 
 USER privoxy
 
 WORKDIR /usr/local/etc/privoxy/
-
-CMD ["privoxy", "--no-daemon"]
-
+CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
