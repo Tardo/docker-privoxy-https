@@ -12,7 +12,7 @@ This image downloads the 'trustedCAs' file from curl.se and also generates the c
 
 ### Docker
 ```sh
-docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy:/usr/local/etc/privoxy ghtardo/docker-privoxy-https
+docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy-ca:/usr/local/etc/privoxy/CA -v privoxy-certs:/usr/local/etc/privoxy/certs ghtardo/docker-privoxy-https
 ```
 
 
@@ -29,12 +29,14 @@ services:
     environment:
       - TZ=Europe/Madrid
     volumes:
-      - privoxy:/usr/local/etc/privoxy
+      - privoxy-ca:/usr/local/etc/privoxy/CA
+      - privoxy-certs:/usr/local/etc/privoxy/certs
     restart: unless-stopped
     hostname: "privoxy"
 
 volumes:
-    privoxy:
+    privoxy-ca:
+    privoxy-certs:
 ```
 
 ### Get ca-bundle
