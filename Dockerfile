@@ -47,9 +47,9 @@ RUN set -eux; \
     apk add --no-cache --virtual sys-tools \
         openssl \
         python3 \
-        supervisor; \
-    python -m ensurepip; \
-    pip3 install --no-cache --upgrade pip setuptools;
+        py3-setuptools \
+        py3-pip \
+        supervisor;
 
 RUN set -eux; \
     mv /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \

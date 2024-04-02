@@ -4,7 +4,7 @@
 import time
 import requests
 import pytest
-from python_on_whales import docker
+from python_on_whales import DockerClient
 
 PRIVOXY_PORT = "8118"
 
@@ -15,6 +15,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope='session')
 def docker_privoxy(pytestconfig):
+    docker = DockerClient()
     no_cache = bool(pytestconfig.getoption('no_cache', False))
     privoxy_ver = pytestconfig.getoption('privoxy_version')
     docker.build(
@@ -25,6 +26,7 @@ def docker_privoxy(pytestconfig):
         tags="test:docker-privoxy-https",
         cache=not no_cache,
     )
+    container = None
     try: 
         container = docker.container.run(
             "test:docker-privoxy-https",
@@ -42,7 +44,9 @@ def docker_privoxy(pytestconfig):
         docker.copy(("privoxy-pytest", "/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt"), "./tests/privoxy-ca-bundle.crt")
         yield container
     finally:
-        docker.container.kill(container)
+        if container:
+            docker.container.kill(container)
+            time.sleep(5)    # Wait for docker
         docker.volume.remove("pytest-privoxy")
 
 
@@ -59,6 +63,7 @@ def make_request():
 @pytest.fixture(scope='session')
 def exec_privman():
     def _run(docker_container, *args):
+        docker = DockerClient()
         return docker.container.execute(
             docker_container,
             ['privman'] + list(args)
