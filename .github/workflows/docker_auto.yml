@@ -54,7 +54,7 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          buildArgs: |
+          build-args: |
             PRIVOXY_VERSION=${{ env.BUILD_VER }}
           push: true
           labels: |
@@ -81,7 +81,7 @@ jobs:
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
-          buildArgs: |
+          build-args: |
             PRIVOXY_VERSION=${{ env.BUILD_VER }}
           push: true
           labels: |
