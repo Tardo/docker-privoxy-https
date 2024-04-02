@@ -11,6 +11,7 @@ jobs:
       DOCKER_PLATFORMS: linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/386
       DOCKER_IMAGE: ghtardo/docker-privoxy-https
       LASTEST_VERSION: "3.0.34-2"
+      PRIVOXY_VERSION: "3.0.34"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -55,7 +56,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: |
-            PRIVOXY_VERSION=${{ env.BUILD_VER }}
+            PRIVOXY_VERSION=${{ env.PRIVOXY_VERSION }}
           push: true
           labels: |
             org.opencontainers.image.authors=${{ github.repository_owner }}
@@ -82,7 +83,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           platforms: ${{ env.DOCKER_PLATFORMS }}
           build-args: |
-            PRIVOXY_VERSION=${{ env.BUILD_VER }}
+            PRIVOXY_VERSION=${{ env.PRIVOXY_VERSION }}
           push: true
           labels: |
             org.opencontainers.image.authors=${{ github.repository_owner }}
