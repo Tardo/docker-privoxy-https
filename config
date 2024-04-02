@@ -2155,7 +2155,7 @@ listen-backlog -1
 #      Privoxy will not compress buffered content below a certain
 #      length.
 #
-enable-compression 1
+enable-compression 0
 #
 #  6.14. compression-level
 #  ========================
@@ -2200,7 +2200,7 @@ enable-compression 1
 #        # is likely to be flawed.
 #        compression-level 0
 #
-compression-level 1
+#compression-level 1
 #
 #  6.15. client-header-order
 #  ==========================
