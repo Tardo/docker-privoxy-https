@@ -35,7 +35,7 @@ RUN set -eux; \
     cd /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     autoheader; \
     autoconf; \
-    ./configure --disable-toggle --disable-editor --disable-force --with-openssl; \
+    ./configure --disable-toggle --disable-editor --disable-force --with-openssl --with-brotli; \
     make; \
     make -s install USER=privoxy GROUP=privoxy;
 

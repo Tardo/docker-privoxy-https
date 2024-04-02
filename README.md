@@ -64,3 +64,4 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - --disable-editor 
 - --disable-force 
 - --with-openssl 
+- --with-brotli
