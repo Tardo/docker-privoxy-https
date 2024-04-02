@@ -18,8 +18,6 @@ docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy-ca
 
 ### Docker Compose
 ```yml
-version: "3"
-
 services:
   privoxy:
     image: ghtardo/docker-privoxy-https
@@ -66,5 +64,3 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - --disable-editor 
 - --disable-force 
 - --with-openssl 
-- --with-brotli 
-- --enable-compression
