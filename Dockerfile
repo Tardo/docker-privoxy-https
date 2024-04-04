@@ -41,7 +41,7 @@ RUN set -eux; \
     ./configure --disable-toggle --disable-editor --disable-force --with-openssl --with-brotli; \
     make; \
     make -s install USER=privoxy GROUP=privoxy; \
-    chown -R privoxy:privoxy /usr/local/etc/privoxy/ \
+    chown -R privoxy:privoxy /usr/local/etc/privoxy/; \
     rm -rf /var/lib/privoxy/privoxy-src.tar.gz /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     apk del build-tools;
 
