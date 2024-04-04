@@ -19,8 +19,8 @@ This image downloads the 'trustedCAs' file from curl.se and also generates the c
 | ADBLOCK_URLS | String of urls separated by spaces | "" |
 | ADBLOCK_FILTERS | String of filters separated by spaces | "" |
 
-** Can get urls from: https://easylist.to/
-** Can know the available filters with ```privoxy-blocklist --help```
+- Can get urls from: https://easylist.to/
+- Can know the available filters with ```docker exec privoxy privoxy-blocklist --help```
 
 ### Docker
 ```sh
