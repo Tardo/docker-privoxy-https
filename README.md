@@ -4,11 +4,23 @@
 
 Alpine docker with [privoxy](https://www.privoxy.org) enabled and configured to work with HTTPS.
 
+It also includes the script made by '[Andrwe Lord Weber](https://github.com/Andrwe/privoxy-blocklist)' to translate adblock rules to privoxy.
+
 **The default configuration is intended for personal use only (ex. raspberry)**
 
 ## :bulb: Documentation
 
 This image downloads the 'trustedCAs' file from curl.se and also generates the ca-bundle file. So, you only need copy the 'ca-bundle' file and install it on your browser/system.
+
+### Env. Variables
+
+| Name | Description | Default |
+|----------------|-------------|-------------|
+| ADBLOCK_URLS | String of urls separated by spaces | "" |
+| ADBLOCK_FILTERS | String of filters separated by spaces | "" |
+
+** Can get urls from: https://easylist.to/
+** Can know the available filters with ```privoxy-blocklist --help```
 
 ### Docker
 ```sh
@@ -26,6 +38,8 @@ services:
       - 8118:8118
     environment:
       - TZ=Europe/Madrid
+      - ADBLOCK_URLS="https://easylist.to/easylist/easylist.txt"
+      - ADBLOCK_FILTERS="attribute_global_name attribute_global_exact attribute_global_contain attribute_global_startswith attribute_global_endswith class_global id_global"
     volumes:
       - privoxy-ca:/usr/local/etc/privoxy/CA
       - privoxy-certs:/usr/local/etc/privoxy/certs
@@ -46,6 +60,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 
 - Update the Trusted CA file: `docker exec privoxy privman --update-trusted-ca`
 - Regenerate the .crt bundle: `docker exec privoxy privman --regenerate-crt-bundle`
+- Update 'adblock' filters: `docker exec privoxy privman --update-adblock-filters`
 - Block a domain to the blacklist: `docker exec privoxy privman --add-blacklist .google. .facebook.`
 - Remove a domain from the blacklist: `docker exec privoxy privman --remove-blacklist .facebook.`
 
@@ -56,7 +71,8 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 | /usr/local/etc/privoxy/ | Where privoxy files are located |
 | /usr/local/etc/privoxy/config | The configuration file |
 | /usr/local/etc/privoxy/CA | Where auth. certs are located |
-| /usr/local/etc/privoxy/certs | Where privoxy stores the downloaded certificates|
+| /usr/local/etc/privoxy/certs | Where privoxy stores the downloaded certificates |
+| /var/lib/privoxy | Where are the scripts related to privoxy |
 
 ## :bookmark_tabs: Privoxy Compiler Options
 

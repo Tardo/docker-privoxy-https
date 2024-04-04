@@ -14,7 +14,7 @@ def pytest_addoption(parser):
     parser.addoption('--privoxy-version', action='store', default="3.0.34")
 
 @pytest.fixture(scope='session')
-def docker_privoxy(pytestconfig):
+def docker_build(pytestconfig):
     docker = DockerClient()
     no_cache = bool(pytestconfig.getoption('no_cache', False))
     privoxy_ver = pytestconfig.getoption('privoxy_version')
@@ -26,9 +26,13 @@ def docker_privoxy(pytestconfig):
         tags="test:docker-privoxy-https",
         cache=not no_cache,
     )
+    return docker
+
+@pytest.fixture(scope='session')
+def docker_privoxy(docker_build):
     container = None
     try: 
-        container = docker.container.run(
+        container = docker_build.container.run(
             "test:docker-privoxy-https",
             volumes=[
                 ("pytest-privoxy", "/usr/local/etc/privoxy"),
@@ -36,19 +40,22 @@ def docker_privoxy(pytestconfig):
             publish=[
                 (PRIVOXY_PORT, PRIVOXY_PORT)
             ],
+            envs={
+                "ADBLOCK_URLS": "https://easylist.to/easylist/easylist.txt",
+                "ADBLOCK_FILTERS": '"attribute_global_name attribute_global_exact attribute_global_contain attribute_global_startswith attribute_global_endswith class_global id_global"',
+            },
             name="privoxy-pytest",
             remove=True,
             detach=True,
         )
         time.sleep(5)   # Wait for service
-        docker.copy(("privoxy-pytest", "/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt"), "./tests/privoxy-ca-bundle.crt")
+        docker_build.copy(("privoxy-pytest", "/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt"), "./tests/privoxy-ca-bundle.crt")
         yield container
     finally:
         if container:
-            docker.container.kill(container)
+            docker_build.container.kill(container)
             time.sleep(5)    # Wait for docker
-        docker.volume.remove("pytest-privoxy")
-
+        docker_build.volume.remove("pytest-privoxy")
 
 @pytest.fixture(scope='session')
 def make_request():

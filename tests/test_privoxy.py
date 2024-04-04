@@ -7,6 +7,8 @@ from requests.exceptions import SSLError
 
 
 class TestPrivoxyContainer:
+    def _is_blocked_by_privoxy(self, response):
+        return response.status_code == 403 and "Request blocked" in response.text
 
     def test_http(self, docker_privoxy, make_request):
         resp = make_request('http://google.com', docker_privoxy)
@@ -27,9 +29,13 @@ class TestPrivoxyContainer:
         assert "successfully" in resp
         time.sleep(3)
         resp = make_request('http://google.com', docker_privoxy)
-        assert resp.status_code == 403
+        assert self._is_blocked_by_privoxy(resp) == True
         resp = exec_privman(docker_privoxy, "--remove-blacklist", ".google.")
         assert "successfully" in resp
         time.sleep(3)
         resp = make_request('https://google.com', docker_privoxy)
         assert resp.status_code == 200
+
+    def test_adblock_filters(self, docker_privoxy, make_request):
+        resp = make_request('http://google.com/www/ad/test', docker_privoxy)
+        assert self._is_blocked_by_privoxy(resp) == True

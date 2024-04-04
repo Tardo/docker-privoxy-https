@@ -4,11 +4,14 @@
 
 import os
 import argparse
+import subprocess
 import urllib.request
 
+BASE_LIB_DIR = '/var/lib/privoxy'
 BASE_DIR = '/usr/local/etc/privoxy'
 BASEDIR_CA = os.path.join(BASE_DIR, 'CA')
 BASEDIR_RULES = os.path.join(BASE_DIR, 'privman-rules')
+ADBLOCK_DYN_FILE = os.path.join(BASE_LIB_DIR, 'adblock-dyn.conf')
 
 RULES = {
     'WHITELIST': "{ -block -filter }",
@@ -38,9 +41,17 @@ def generate_crt_bundle(subj, forced=False):
     else:
         print_log("CRT Bundle", "Nothing to do. The file already exists.")
 
+def update_adblock_filters():
+    adblock_filters = " ".join(map(lambda x: f'"{x}"', os.environ.get("ADBLOCK_FILTERS", "").split(" ")))
+    adblock_urls = " ".join(map(lambda x: f'"{x}"', os.environ.get("ADBLOCK_URLS", "").split(" ")))
+    lines = [f"URLS=({adblock_urls})", f"\nFILTERS=({adblock_filters})"]
+    with open(ADBLOCK_DYN_FILE, 'w') as f:
+        f.writelines(lines)
+    subprocess.run(["privoxy-blocklist", "-c", "/var/lib/privoxy/privoxy-blocklist.conf"])
+    return True
+
 def _get_section_index(rules, section):
     for index, rule in enumerate(rules):
-        print('IT: ', index, ' --- ', rule)
         if rule.strip() == section:
             return index
     return -1
@@ -175,6 +186,11 @@ if __name__ == '__main__':
         help='Generate the .crt bundle',
         default="/C=ES/ST=Madrid/L=Madrid/O=DockerPrivoxy Security/OU=PROXY Department/CN=privoxy.proxy")
     parser.add_argument(
+        '--update-adblock-filters',
+        help='Update Adblock Filters',
+        action='store_true',
+        default=False)
+    parser.add_argument(
         '--add-whitelist',
         type=str,
         action="extend", 
@@ -209,11 +225,14 @@ if __name__ == '__main__':
 
     if args.init:
         update_trusted_ca()
+        update_adblock_filters()
         generate_crt_bundle(args.crt_bundle_subj)
     if args.update_trusted_ca:
         need_restart = update_trusted_ca(forced=True)
     if args.regenerate_crt_bundle:
         need_restart = generate_crt_bundle(args.crt_bundle_subj, forced=True)
+    if args.update_adblock_filters:
+        need_restart = update_adblock_filters()
     if args.add_whitelist:
         need_restart = add_whitelist(args.add_whitelist)
     if args.add_soft_whitelist:
