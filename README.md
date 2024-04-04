@@ -12,6 +12,9 @@ It also includes the script made by '[Andrwe Lord Weber](https://github.com/Andr
 
 This image downloads the 'trustedCAs' file from curl.se and also generates the ca-bundle file. So, you only need copy the 'ca-bundle' file and install it on your browser/system.
 
+Privoxy Status Page: https://config.privoxy.org/show-status
+
+
 ### Env. Variables
 
 | Name | Description | Default |
@@ -38,8 +41,7 @@ services:
       - 8118:8118
     environment:
       - TZ=Europe/Madrid
-      - ADBLOCK_URLS="https://easylist.to/easylist/easylist.txt"
-      - ADBLOCK_FILTERS="attribute_global_name attribute_global_exact attribute_global_contain attribute_global_startswith attribute_global_endswith class_global id_global"
+      - ADBLOCK_URLS=https://easylist.to/easylist/easylist.txt
     volumes:
       - privoxy-ca:/usr/local/etc/privoxy/CA
       - privoxy-certs:/usr/local/etc/privoxy/certs
