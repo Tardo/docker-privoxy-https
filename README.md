@@ -66,6 +66,17 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - Block a domain to the blacklist: `docker exec privoxy privman --add-blacklist .google. .facebook.`
 - Remove a domain from the blacklist: `docker exec privoxy privman --remove-blacklist .facebook.`
 
+## :page_facing_up: Configuration highlight changes
+
+- `actionsfile privman-rules/user.action` > Where are the privman rules (empty by default)
+- `filterfile privman-rules/user.filter` > Predefined privman aliases
+- `buffer-limit` > Increased to 25600KB (25MB)
+- `keep-alive-timeout` > Increased to 600 seconds
+- `socket-timeout` > Decreased to 5 seconds
+- `max-client-connections` > Increased to 512
+- `listen-backlog` > Set to -1 (maximum queue length allowed)
+- `receive-buffer-size` > Increased to 65536 bytes
+
 ## :bookmark: Points of Interest
 
 | Container Path | Description |
@@ -76,7 +87,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 | /usr/local/etc/privoxy/certs | Where privoxy stores the downloaded certificates |
 | /var/lib/privoxy | Where are the scripts related to privoxy |
 
-## :bookmark_tabs: Privoxy Compiler Options
+## :computer: Privoxy Compiler Options
 
 - --disable-toggle
 - --disable-editor 
