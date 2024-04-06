@@ -49,7 +49,6 @@ services:
 
 volumes:
     privoxy-ca:
-    privoxy-certs:
 ```
 
 ### Get ca-bundle
