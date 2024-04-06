@@ -109,7 +109,7 @@
 #      The best all purpose solution is simply to put the full local
 #      PATH to where the User Manual is located:
 #
-user-manual  /usr/share/doc/privoxy/user-manual
+#user-manual  /usr/share/doc/privoxy/user-manual
 #
 #      The User Manual is then available to anyone with access to
 #      Privoxy, by following the built-in URL: http://
@@ -1135,7 +1135,7 @@ enable-edit-actions 0
 #      buffer-limit Kbytes each, unless you have enabled
 #      "single-threaded" above.
 #
-buffer-limit 4096
+buffer-limit 25600
 #
 #  4.9. enable-proxy-authentication-forwarding
 #  ============================================
@@ -1711,7 +1711,7 @@ split-large-forms 0
 #
 #      keep-alive-timeout 300
 #
-keep-alive-timeout 300
+keep-alive-timeout 600
 #
 #  6.5. tolerate-pipelining
 #  =========================
@@ -1754,7 +1754,7 @@ keep-alive-timeout 300
 #
 #      tolerate-pipelining 1
 #
-tolerate-pipelining 1
+tolerate-pipelining 0
 #
 #  6.6. default-server-timeout
 #  ============================
@@ -2441,6 +2441,7 @@ listen-backlog -1
 #            # Increase the receive buffer size
 #            receive-buffer-size 32768
 #
+receive-buffer-size 65536
 #
 #  7. HTTPS INSPECTION
 #  ====================
