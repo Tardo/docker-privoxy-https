@@ -27,7 +27,7 @@ Privoxy Status Page: https://config.privoxy.org/show-status
 
 ### Docker
 ```sh
-docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy-ca:/usr/local/etc/privoxy/CA -v privoxy-certs:/usr/local/etc/privoxy/certs ghtardo/docker-privoxy-https
+docker run -d --restart unless-stopped --name privoxy -p 8118:8118 -v privoxy-ca:/usr/local/etc/privoxy/CA ghtardo/docker-privoxy-https
 ```
 
 
@@ -44,7 +44,6 @@ services:
       - ADBLOCK_URLS=https://easylist.to/easylist/easylist.txt
     volumes:
       - privoxy-ca:/usr/local/etc/privoxy/CA
-      - privoxy-certs:/usr/local/etc/privoxy/certs
     restart: unless-stopped
     hostname: "privoxy"
 
