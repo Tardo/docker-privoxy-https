@@ -50,8 +50,6 @@ RUN set -eux; \
     apk add --no-cache --virtual sys-tools \
         openssl \
         python3 \
-        py3-setuptools \
-        py3-pip \
         supervisor \
         bash \
         sed;
