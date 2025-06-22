@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.12"
 python-on-whales = "^0.77.0"
 pytest = "^8.4.1"
+requests = "^2.32.4"
 
 
 [build-system]
