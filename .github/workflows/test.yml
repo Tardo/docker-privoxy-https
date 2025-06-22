@@ -11,7 +11,7 @@ jobs:
   privoxy:
     strategy:
       matrix:
-        privoxy_version: [3.0.34]
+        privoxy_version: [4.0.0]
       fail-fast: false
     runs-on: ubuntu-latest
 
