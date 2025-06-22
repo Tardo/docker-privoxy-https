@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "docker-privoxy-https"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Alexandre D. Díaz <dev@redneboa.es>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-python-on-whales = "^0.70.1"
-pytest = "^8.1.1"
+python = "^3.13.5"
+python-on-whales = "^0.77.0"
+pytest = "^8.4.1"
 
 
 [build-system]
