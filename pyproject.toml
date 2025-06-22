@@ -6,7 +6,7 @@ authors = ["Alexandre D. Díaz <dev@redneboa.es>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.13.5"
+python = "^3.12"
 python-on-whales = "^0.77.0"
 pytest = "^8.4.1"
 
