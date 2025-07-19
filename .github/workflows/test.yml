@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         privoxy_version: [4.0.0]
-        python-version: [3.12]
+        python-version: [3.13]
       fail-fast: false
     runs-on: ubuntu-latest
 
@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.13
+          python-version: ${{ matrix.python-version }}
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v3
