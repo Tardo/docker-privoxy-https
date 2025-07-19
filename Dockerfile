@@ -15,6 +15,9 @@ RUN set -ex; \
     chown privoxy:privoxy /var/lib/privoxy/;
 
 ARG PRIVOXY_VERSION=4.0.0
+ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli"
+ARG PRIVOXY_BUILD_EXTRA="openssl-dev brotli-dev"
+ARG SYSTEM_EXTRA_PKGS="openssl brotli net-tools"
 
 # Build Privoxy
 RUN set -eux; \
@@ -27,15 +30,14 @@ RUN set -eux; \
         libc-dev \
         zlib-dev \
         pcre2-dev \
-        openssl-dev \
-        brotli-dev; \
+        $PRIVOXY_BUILD_EXTRA; \
     mkdir -p /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     wget -O /var/lib/privoxy/privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
     tar -zxvf /var/lib/privoxy/privoxy-src.tar.gz -C /usr/local/src/; \
     cd /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     autoheader; \
     autoconf; \
-    ./configure --disable-toggle --disable-editor --disable-force --with-openssl --with-brotli; \
+    ./configure $PRIVOXY_CONFIG_OPTIONS; \
     make; \
     make -s install USER=privoxy GROUP=privoxy; \
     chown -R privoxy:privoxy /usr/local/etc/privoxy/; \
@@ -45,14 +47,11 @@ RUN set -eux; \
 # Add system tools
 RUN set -eux; \
     apk add --no-cache --virtual runtime-deps \
-            openssl \
             python3 \
             pcre2 \
-            brotli \
-            supervisor \
             bash \
             sed \
-            net-tools;
+            $SYSTEM_EXTRA_PKGS;
 
 # Enable Privoxy HTTPS inspection
 RUN set -ex; \
@@ -61,7 +60,6 @@ RUN set -ex; \
 
 # Copy project scripts/configs
 COPY data/rules/ /usr/local/etc/privoxy/privman-rules/
-COPY data/supervisord.conf /usr/local/etc/privoxy/
 COPY data/config /usr/local/etc/privoxy/
 COPY data/privoxy-blocklist.conf /var/lib/privoxy/
 RUN set -eux; \
@@ -84,11 +82,11 @@ RUN set -ex; \
     sed -i 's/\r$//' /var/lib/privoxy/privman.py /var/lib/privoxy/privoxy-blocklist.sh; \
     head -1 /var/lib/privoxy/privman.py | grep -q '^#!' || \
       sed -i '1i #!/usr/bin/env python3' /var/lib/privoxy/privman.py; \
-    mkdir -p /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules; \
-    chown -R privoxy:privoxy /usr/local/etc/privoxy/config /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules /var/lib/privoxy/privoxy-blocklist.conf; \
+    mkdir -p /var/log/privoxy /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules; \
+    chown -R privoxy:privoxy /var/log/privoxy/ /usr/local/etc/privoxy/config /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules /var/lib/privoxy/privoxy-blocklist.conf; \
     chmod +x /var/lib/privoxy/privman.py; \
-    ln -sf /var/lib/privoxy/privman.py /usr/local/bin/privman; \
-    ln -sf /var/lib/privoxy/privoxy-blocklist.sh /usr/local/bin/privoxy-blocklist;
+    ln -sf /var/lib/privoxy/privman.py /usr/local/sbin/privman; \
+    ln -sf /var/lib/privoxy/privoxy-blocklist.sh /usr/local/sbin/privoxy-blocklist;
 
 ENV ADBLOCK_URLS="" \
     ADBLOCK_FILTERS=""
@@ -103,4 +101,4 @@ EXPOSE 8118/tcp
 USER privoxy
 
 WORKDIR /usr/local/etc/privoxy/
-CMD ["/usr/bin/supervisord", "-c", "supervisord.conf"]
+CMD ["/usr/local/sbin/privoxy", "--no-daemon"]

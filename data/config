@@ -1,6 +1,6 @@
 #        Sample Configuration File for Privoxy 4.0.0
 #
-# Copyright (C) 2001-2023 Privoxy Developers https://www.privoxy.org/
+# Copyright (C) 2001-2025 Privoxy Developers https://www.privoxy.org/
 #
 #####################################################################
 #                                                                   #
@@ -109,7 +109,7 @@
 #      The best all purpose solution is simply to put the full local
 #      PATH to where the User Manual is located:
 #
-#user-manual  /usr/share/doc/privoxy/user-manual
+#        user-manual  /usr/share/doc/privoxy/user-manual
 #
 #      The User Manual is then available to anyone with access to
 #      Privoxy, by following the built-in URL: http://
@@ -384,6 +384,7 @@ logdir /var/log/privoxy
 #
 actionsfile match-all.action # Actions that are applied to all sites and maybe overruled later on.
 actionsfile default.action   # Main actions file
+actionsfile user.action      # User customizations
 actionsfile privman-rules/user.action   # Privman customizations
 #actionsfile regression-tests.action     # Tests for privoxy-regression-test
 #
@@ -430,6 +431,7 @@ actionsfile privman-rules/user.action   # Privman customizations
 #      separate file, such as user.filter.
 #
 filterfile default.filter
+filterfile user.filter      # User customizations
 filterfile privman-rules/user.filter      # Privman customizations
 #
 #  2.7. logfile
@@ -478,7 +480,7 @@ filterfile privman-rules/user.filter      # Privman customizations
 #      require additional software to do it. For details, please
 #      refer to the documentation for your operating system.
 #
-logfile logfile
+logfile /var/log/privoxy/privoxy.log
 #
 #  2.8. trustfile
 #  ===============
@@ -610,17 +612,17 @@ logfile logfile
 #      you read the log messages, you may even be able to solve the
 #      problem on your own.
 #
-#debug     1 # Log the destination for each request. See also debug 1024.
+debug     1 # Log the destination for each request. See also debug 1024.
 #debug     2 # show each connection status
 #debug     4 # show tagging-related messages
 #debug     8 # show header parsing
 #debug   128 # debug redirects
 #debug   256 # debug GIF de-animation
-#debug   512 # Common Log Format
+debug   512 # Common Log Format
 #debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
 #debug  4096 # Startup banner and warnings
 #debug  8192 # Non-fatal errors
-#debug 65536 # Log applying actions
+debug 65536 # Log applying actions
 #
 #  3.2. single-threaded
 #  =====================
@@ -1300,7 +1302,7 @@ enable-proxy-authentication-forwarding 0
 #  visits.
 #
 #  Also specified here are SOCKS proxies. Privoxy supports the SOCKS
-#  4 and SOCKS 4A protocols.
+#  4, SOCKS 4A and SOCKS 5 protocols.
 #
 #
 #  5.1. forward
@@ -2155,7 +2157,7 @@ listen-backlog -1
 #      Privoxy will not compress buffered content below a certain
 #      length.
 #
-#enable-compression 0
+#enable-compression 1
 #
 #  6.14. compression-level
 #  ========================

@@ -48,11 +48,18 @@ FILTERTYPES=(
     "id_global"
 )
 
+DEFAULT_URLS=(
+  "https://easylist-downloads.adblockplus.org/easylistgermany.txt"
+  "https://easylist-downloads.adblockplus.org/easylist.txt"
+)
+
 ######################################################################
 #
 #                  No changes needed after this line.
 #
 ######################################################################
+
+SCRIPTNAME="$(basename "$(readlink -f "${0}")")"
 
 function usage() {
     get_config_path
@@ -60,15 +67,23 @@ function usage() {
     echo " "
     echo "Options:"
     echo "      -h:         Show this help."
-    echo "      -c:         Path to script configuration file. (default = ${SCRIPTCONF} - OS specific)"
-    echo "      -f filter:  only activate given content filter, can be used multiple times. (default: empty, content-filter disabled)"
+    echo "      -a:         Run in 'Activate Mode', which registers converted lists in Privoxy configuration file. (default mode) [env: ACTIVATE=1]"
+    echo "      -A:         Run in 'Convert Mode', which does *not* register converted lists in Privoxy configuration file. [env: ACTIVATE=0]"
+    echo "      -c path:    Path to script configuration file. (default = ${SCRIPTCONF} - OS specific) [env: SCRIPTCONF='']"
+    echo "      -C:         Don't write configuration file [env: NO_CONFIG=1]"
+    echo "      -d path:    Path to store generated list files (*.action & *.filter) in. (default = directory of privoxy-config - OS specific) [env: LISTS_DIR='']"
+    echo "      -f filter:  Only activate given content filter, can be used multiple times. (default: empty, content-filter disabled) [env: FILTERS=()]"
     echo "                  Supported values: ${FILTERTYPES[*]}"
-    echo "      -q:         Don't give any output."
-    echo "      -v 1:       Enable verbosity 1. Show a little bit more output."
-    echo "      -v 2:       Enable verbosity 2. Show a lot more output."
-    echo "      -v 3:       Enable verbosity 3. Show all possible output and don't delete temporary files.(For debugging only!!)"
-    echo "      -V:         Show version."
+    echo "      -p path:    Path to Privoxy config file. (default = OS specific) [env: PRIVOXY_CONF='']"
+    echo "      -q:         Don't give any output. [env: DBG='-1']"
     echo "      -r:         Remove all lists build by this script."
+    echo "      -t path:    Define path for temporary files. (default: /tmp/${SCRIPTNAME}) [env: TMPDIR='']"
+    echo "      -u URL:     Process given list URL, can be used multiple times. (default: ${DEFAULT_URLS[*]}) [env: URLS=()]"
+    echo "      -U:         Update configuration file based on given parameters and exit."
+    echo "      -v 1:       Enable verbosity 1. Show a little bit more output. [env: DBG=1]"
+    echo "      -v 2:       Enable verbosity 2. Show a lot more output. [env: DBG=2]"
+    echo "      -v 3:       Enable verbosity 3. Show all possible output and don't delete temporary files.(For debugging only!!) [env: DBG=3]"
+    echo "      -V:         Show version."
 }
 
 # shellcheck disable=SC2317  # function is called in case of FILTERS not empty
@@ -86,14 +101,18 @@ function activate_config() {
             option="filterfile"
             ;;
     esac
-    copy "${file_path}" "${PRIVOXY_DIR}"
-    if ! grep -q "${file_name}" "${PRIVOXY_CONF}"; then
+    copy "${file_path}" "${LISTS_DIR}"
+    if [ "${ACTIVATE}" -eq 0 ]; then
+        info "Skip activation of '${file_name}' due to 'Convert Mode'."
+        return 0
+    fi
+    if ! grep -q "${LISTS_DIR}/${file_name}" "${PRIVOXY_CONF}"; then
         debug 0 "Modifying ${PRIVOXY_CONF} ..."
         # ensure generated config is above user.* to allow overriding
         if [ "${OS_FLAVOR}" = "openwrt" ]; then
-            sed "s%^\(\s*#*\s*list\s\s*${option}\s\s*'user\.${file_type}'\)%\tlist\t${option}\t'${PRIVOXY_DIR}/${file_name}'\n\1%" "${PRIVOXY_CONF}" > "${TMPDIR}/config"
+            sed "s%^\(\s*#*\s*list\s\s*${option}\s\s*'user\.${file_type}'\)%\tlist\t${option}\t'${LISTS_DIR}/${file_name}'\n\1%" "${PRIVOXY_CONF}" > "${TMPDIR}/config"
         else
-            sed "s/^\(#*\s*${option} privman-rules\/user\.${file_type}\)/${option} ${file_name}\n\1/" "${PRIVOXY_CONF}" > "${TMPDIR}/config"
+            sed "s%^\(#*\s*${option} user\.${file_type}\)%${option} ${LISTS_DIR}/${file_name}\n\1%" "${PRIVOXY_CONF}" > "${TMPDIR}/config"
         fi
         debug 0 "... modification done."
         debug 0 "Installing new config ..."
@@ -113,8 +132,12 @@ function copy() {
         full_target_path="${target_path}/$(basename "${source_path}")"
     fi
     cp "${VERBOSE[@]}" "${source_path}" "${target_path}"
-    chown "${PRIVOXY_USER}:${PRIVOXY_GROUP}" "${full_target_path}"
-    chmod a+x "${full_target_path}"
+    if [ "${ACTIVATE}" -eq 1 ]; then
+        chown "${PRIVOXY_USER}:${PRIVOXY_GROUP}" "${full_target_path}"
+    fi
+    if [ -d "${full_target_path}" ]; then
+        chmod a+x "${full_target_path}"
+    fi
 }
 
 function get_config_path() {
@@ -151,10 +174,10 @@ function get_user_group() {
         # shellcheck disable=SC2012
         ls -l "/etc/privoxy/default.action" | sed 's/^[^ ]*\s\s*[0-9][0-9]*\s\s*\([^ ][^ ]*\)\s\s*\([^ ][^ ]*\)\s\s*.*/\1 \2/'
     else
-        if LANG=C stat --help |& grep ' \-c' | grep -q '\-\-format'; then
+        if LANG=C stat --help |& grep -- ' -c' | grep -q -- '--format'; then
             # Linux stat-command
             stat -c "%U %G" /etc/privoxy/default.action
-        elif LANG=C stat --help |& grep ' \-f' | grep -q 'format'; then
+        elif LANG=C stat --help |& grep -- ' -f' | grep -q 'format'; then
             # MacOS stat-command
             local user_id group_id
             user_id="$(stat -f "%u" /etc/privoxy/default.action)"
@@ -177,8 +200,54 @@ function get_group() {
     get_user_group | cut -d' ' -f2
 }
 
+function write_config() {
+    local filters="" urls=""
+    # convert to list of quoted strings
+    for filter in "${OPT_FILTERS[@]:-"${FILTERS[@]}"}"; do
+        filters+="\"${filter}\" "
+    done
+    # convert to list of quoted strings
+    for url in "${OPT_URLS[@]:-"${URLS[@]:-"${DEFAULT_URLS[@]}"}"}"; do
+        urls+="\"${url}\" "
+    done
+    cat > "${SCRIPTCONF}" << EOF
+# Config of privoxy-blocklist
+
+# array of URL for AdblockPlus lists
+#  for more sources just add it within the round brackets
+URLS=(${urls})
+
+# array of content filters to convert
+#   for supported values check: $0 -h
+#   empty by default to deactivate as content filters slowdown privoxy a lot
+FILTERS=(${filters})
+
+# config for privoxy initscript providing PRIVOXY_CONF, PRIVOXY_USER and PRIVOXY_GROUP
+INIT_CONF="/etc/conf.d/privoxy"
+
+# !! set these when config INIT_CONF doesn't exist and default values do not match your system !!
+# !! These values will be overwritten by INIT_CONF when exists !!
+#PRIVOXY_USER="privoxy"
+#PRIVOXY_GROUP="root"
+#PRIVOXY_CONF="/etc/privoxy/config"
+
+# name for lock file (default: script name)
+TMPNAME="\$(basename "\$(readlink -f "\${0}")")"
+# directory for temporary files
+TMPDIR="${OPT_TMPDIR:-"/tmp/\${TMPNAME}"}"
+
+# Debug-level
+#   -1 = quiet
+#    0 = normal
+#    1 = verbose
+#    2 = more verbose (debugging)
+#    3 = incredibly loud (function debugging)
+DBG=0
+EOF
+}
+
 function prepare() {
-    # if [ ${UID} -ne 0 ]; then
+    # if [ "${ACTIVATE}" -eq 1 ] && [ ${UID} -ne 0 ]; then
     #     error "Root privileges needed. Exit."
     #     usage
     #     exit 1
@@ -196,67 +265,56 @@ function prepare() {
         get_config_path
     fi
 
-    if [[ ! -d "$(dirname "${SCRIPTCONF}")" ]]; then
-        info "creating missing config directory '$(dirname "${SCRIPTCONF}")'"
-        mkdir -p "$(dirname "${SCRIPTCONF}")"
-        chmod 755 "$(dirname "${SCRIPTCONF}")"
+    if [ "${NO_CONFIG}" -eq 0 ]; then
+        if [[ ! -d "$(dirname "${SCRIPTCONF}")" ]]; then
+            info "creating missing config directory '$(dirname "${SCRIPTCONF}")'"
+            mkdir -p "$(dirname "${SCRIPTCONF}")"
+            chmod 755 "$(dirname "${SCRIPTCONF}")"
+        fi
+
+        if [[ ! -f "${SCRIPTCONF}" ]]; then
+            info "No config found in ${SCRIPTCONF}. Creating default one and exiting because you might have to adjust it."
+            write_config
+            exit 2
+        fi
+        if [ "${OPT_UPDATE_CONFIG}" -eq 1 ]; then
+            info "Updating configuration as -U was specified."
+            # shellcheck disable=SC1090
+            source "${SCRIPTCONF}"
+            if [ -z "${OPT_FILTERS[*]}" ]; then
+                OPT_FILTERS=("${FILTERS[@]}")
+            fi
+            if [ -z "${OPT_TMPDIR}" ]; then
+                OPT_TMPDIR="${TMPDIR}"
+            fi
+            write_config
+            exit 0
+        fi
+
+        if [[ ! -r "${SCRIPTCONF}" ]]; then
+            debug -1 "Can't read ${SCRIPTCONF}. Permission denied."
+        fi
+
+        # shellcheck disable=SC1090
+        source "${SCRIPTCONF}"
     fi
 
-    if [[ ! -f "${SCRIPTCONF}" ]]; then
-        info "No config found in ${SCRIPTCONF}. Creating default one and exiting because you might have to adjust it."
-        cat > "${SCRIPTCONF}" << EOF
-# Config of privoxy-blocklist
-
-# array of URL for AdblockPlus lists
-#  for more sources just add it within the round brackets
-URLS=(
-  "https://easylist-downloads.adblockplus.org/easylistgermany.txt"
-  "https://easylist-downloads.adblockplus.org/easylist.txt"
-)
-
-# array of content filters to convert
-#   for supported values check: $0 -h
-#   empty by default to deactivate as content filters slowdown privoxy a lot
-FILTERS=()
-
-# config for privoxy initscript providing PRIVOXY_CONF, PRIVOXY_USER and PRIVOXY_GROUP
-INIT_CONF="/etc/conf.d/privoxy"
-
-# !! set these when config INIT_CONF doesn't exist and default values do not match your system !!
-# !! These values will be overwritten by INIT_CONF when exists !!
-#PRIVOXY_USER="privoxy"
-#PRIVOXY_GROUP="root"
-#PRIVOXY_CONF="/etc/privoxy/config"
-
-# name for lock file (default: script name)
-TMPNAME="\$(basename "\$(readlink -f "\${0}")")"
-# directory for temporary files
-TMPDIR="/tmp/\${TMPNAME}"
-
-# Debug-level
-#   -1 = quiet
-#    0 = normal
-#    1 = verbose
-#    2 = more verbose (debugging)
-#    3 = incredibly loud (function debugging)
-DBG=0
-EOF
-        exit 2
-    fi
-
-    if [[ ! -r "${SCRIPTCONF}" ]]; then
-        debug -1 "Can't read ${SCRIPTCONF}. Permission denied."
-    fi
-
-    # shellcheck disable=SC1090
-    source "${SCRIPTCONF}"
     if [ -n "${OPT_DBG:-}" ]; then
         DBG="${OPT_DBG}"
     fi
     if [ -n "${OPT_FILTERS[*]}" ]; then
         FILTERS=("${OPT_FILTERS[@]}")
     fi
-    debug 2 "Content filters: ${OPT_FILTERS[*]:-disabled}"
+    debug 2 "Content filters: ${FILTERS[*]:-disabled}"
+    if [ -n "${OPT_URLS[*]}" ]; then
+        URLS=("${OPT_URLS[@]}")
+    fi
+    debug 2 "URLs: ${URLS[*]:-}"
+    if [ -n "${OPT_TMPDIR}" ]; then
+        TMPDIR="${OPT_TMPDIR}"
+    fi
+    debug 2 "TMPDIR: ${TMPDIR:-}"
+    TMPNAME="${TMPNAME:-"$(basename "$(readlink -f "${0}")")"}"
 
     # load privoxy config
     # shellcheck disable=SC1090
@@ -265,7 +323,7 @@ EOF
     fi
 
     # set command to be run on exit
-    if [ "${DBG}" -gt 2 ]; then
+    if [ "${DBG:-0}" -gt 2 ]; then
         trap - INT TERM EXIT
     fi
 
@@ -291,13 +349,32 @@ EOF
     fi
 
     # set privoxy config dir
-    PRIVOXY_DIR="$(dirname "${PRIVOXY_CONF}")"
+    LISTS_DIR="${LISTS_DIR:-"$(dirname "${PRIVOXY_CONF}")"}"
+    if ! [ -d "${LISTS_DIR}" ]; then
+        mkdir -p "${LISTS_DIR}"
+        if [ "${ACTIVATE}" -eq 1 ]; then
+            chown "${PRIVOXY_USER}:${PRIVOXY_GROUP}" "${LISTS_DIR}"
+        fi
+    fi
+
+    if [ -z "${URLS[*]:-}" ]; then
+        error "no URLs given. Either provide -u or set environment variable URLS."
+        exit 3
+    fi
+    if [ -z "${TMPDIR:-}" ]; then
+        error "no TMPDIR given. Either provide -t or set environment variable TMPDIR."
+        exit 3
+    fi
+    if [ -z "${PRIVOXY_CONF:-}" ]; then
+        error "no PRIVOXY_CONF given. Either provide -p or set environment variable PRIVOXY_CONF."
+        exit 3
+    fi
 }
 
 function debug() {
     local expected_level="${1}"
     shift 1
-    if [ "${DBG}" -ge "${expected_level}" ]; then
+    if [ "${DBG:-0}" -ge "${expected_level}" ]; then
         if [ "${expected_level}" -eq 0 ]; then
             info "${@}"
         else
@@ -369,7 +446,7 @@ function main() {
         set -e
 
         # convert AdblockPlus list to Privoxy list
-        # blacklist of urls
+        # blocklist of urls
         debug 1 "Creating actionfile for ${list} ..."
         echo "{ +block{${list}} }" > "${actionfile}"
         sed '
@@ -414,7 +491,7 @@ function main() {
                         # remove all combinations with attribute matching
                         /^##\..*\[.*/d
                         # remove all matches with combinators
-                        /^##\..*[>+~ ].*/d
+                        /^##\..*[>+~ :].*/d
                         # cleanup
                         s/^##\.//g
                         # prepare regex merging
@@ -422,7 +499,7 @@ function main() {
                     ' "${html_file}" | while read -r line; do
                         # number of matches within one rule impacts runtime of each request to modify the content
                         if [ "${#lines[@]}" -lt 1000 ]; then
-                            lines+=("$line")
+                            lines+=("${line}")
                             continue
                         fi
                         # complexity of regex impacts runtime of each request to modify the content
@@ -519,7 +596,7 @@ function main() {
                     lines=()
                     # using while-loop as privoxy cannot handle more than 2000 or-connected strings within one regex
                     sed -e '
-                        # only process gloabl classes
+                        # only process gloabl attributes
                         /^##\[[^=][^=]*$/!d
                         # remove all matches with combinators
                         /^##.*[>+~ ].*/d
@@ -529,6 +606,8 @@ function main() {
                         s/^\[\([^=][^=]*\)\]/\1/g
                         # convert dots
                         s/\.\([^\.]\)/\\.\1/g
+                        # convert combined attribute name-only matches (e.g. ##[data-freestar-ad][id])
+                        s/\]\s*\[/.*/g
                         s/$/|/
                     ' "${html_file}" | sort -u | while read -r line; do
                         # number of matches within one rule impacts runtime of each request to modify the content
@@ -746,9 +825,9 @@ function main() {
             # FIXME: add combination of classes and attributes: ##.OUTBRAIN[data-widget-id^="FMS_REELD_"]
         fi
 
-        # create domain based whitelist
+        # create domain based allowlist
 
-        # create domain based blacklist
+        # create domain based blocklist
         #    domains=$(sed '/^#/d;/#/!d;s/,~/,\*/g;s/~/;:\*/g;s/^\([a-zA-Z]\)/;:\1/g' ${file})
         #    [ -n "${domains}" ] && debug 1 "... creating domainbased filterfiles ..."
         #    debug 2 "Found Domains: ${domains}."
@@ -769,12 +848,12 @@ function main() {
         #    IFS=${ifs}
         #    debug 1 "... all domainbased filterfiles created ..."
 
-        debug 1 "... creating and adding whitlist for urls ..."
-        # whitelist of urls
+        debug 1 "... creating and adding allowlist for urls ..."
+        # allowlist of urls
         echo "{ -block }" >> "${actionfile}"
         sed 's/^@@//g;/\$.*/d;/#/d;s/\./\\./g;s/\?/\\?/g;s/\*/.*/g;s/(/\\(/g;s/)/\\)/g;s/\[/\\[/g;s/\]/\\]/g;s/\^/[\/\&:\?=_]/g;s/^||/\./g;s/^|/^/g;s/|$/\$/g;/|/d' "${domain_name_except_file}" >> "${actionfile}"
-        debug 1 "... created and added whitelist - creating and adding image handler ..."
-        # whitelist of image urls
+        debug 1 "... created and added allowlist - creating and adding image handler ..."
+        # allowlist of image urls
         echo "{ -block +handle-as-image }" >> "${actionfile}"
         sed '/^@@.*/!d;s/^@@//g;/\$.*image.*/!d;s/\$.*image.*//g;/#/d;s/\./\\./g;s/\?/\\?/g;s/\*/.*/g;s/(/\\(/g;s/)/\\)/g;s/\[/\\[/g;s/\]/\\]/g;s/\^/[\/\&:\?=_]/g;s/^||/\./g;s/^|/^/g;s/|$/\$/g;/|/d' "${file}" >> "${actionfile}"
         debug 1 "... created and added image handler ..."
@@ -819,20 +898,25 @@ function remove() {
     if [ "${choice}" != "y" ]; then
         exit 0
     fi
-    if rm -rf "${PRIVOXY_DIR}/"*.script.{action,filter} \
-        && sed '/^actionsfile .*\.script\.action$/d;/^filterfile .*\.script\.filter$/d' -i "${PRIVOXY_CONF}"; then
+    if rm -rf "${LISTS_DIR}/"*.script.{action,filter} \
+        && sed '/^\(\s\s*list\s\s*\)\?actionsfile\s\s*.*\.script\.action.\?$/d;/^\(\s\s*list\s\s*\)\?filterfile\s\s*.*\.script\.filter.\?$/d' -i "${PRIVOXY_CONF}"; then
         echo "Lists removed."
         exit 0
     fi
     error "An error occured while removing the lists."
-    error "Please have a look into ${PRIVOXY_DIR} whether there are .script.* files and search for *.script.* in ${PRIVOXY_CONF}."
+    error "Please have a look into ${LISTS_DIR} whether there are .script.* files and search for *.script.* in ${PRIVOXY_CONF}."
     exit 1
 }
 
 VERBOSE=()
 method="main"
 OS="$(uname)"
+ACTIVATE="${ACTIVATE:-1}"
+NO_CONFIG="${NO_CONFIG:-0}"
+OPT_TMPDIR=""
+OPT_UPDATE_CONFIG=0
 OPT_FILTERS=()
+OPT_URLS=()
 
 # ID_LIKE is mainly used to check for openwrt and set via os-release
 ID_LIKE="unset"
@@ -850,19 +934,43 @@ case "${ID_LIKE}" in
 esac
 
 # loop for options
-while getopts ":c:f:hrqv:V" opt; do
+while getopts ":aAc:Cd:f:hp:qrt:u:Uv:V" opt; do
     case "${opt}" in
+        "a")
+            ACTIVATE=1
+            ;;
+        "A")
+            ACTIVATE=0
+            ;;
         "c")
             SCRIPTCONF="${OPTARG}"
             ;;
+        "C")
+            NO_CONFIG=1
+            ;;
+        "d")
+            LISTS_DIR="${OPTARG}"
+            ;;
         "f")
             OPT_FILTERS+=("${OPTARG,,}")
+            ;;
+        "p")
+            PRIVOXY_CONF="${OPTARG}"
             ;;
         "q")
             OPT_DBG=-1
             ;;
         "r")
             method="remove"
+            ;;
+        "t")
+            OPT_TMPDIR="${OPTARG}"
+            ;;
+        "u")
+            OPT_URLS+=("${OPTARG}")
+            ;;
+        "U")
+            OPT_UPDATE_CONFIG=1
             ;;
         "v")
             OPT_DBG="${OPTARG}"
@@ -876,18 +984,28 @@ while getopts ":c:f:hrqv:V" opt; do
             exit 0
             ;;
         ":")
-            echo "${TMPNAME}: -${OPTARG} requires an argument" >&2
+            error "-${OPTARG} requires an argument" >&2
+            echo
+            usage
             exit 1
             ;;
-        "h" | *)
+        "h")
             usage
             exit 0
             ;;
+        "?" | *)
+            error "Unknown option: ${OPTARG}"
+            echo
+            usage
+            exit 1
+            ;;
     esac
 done
+#PRIVOXY_USER
+#PRIVOXY_GROUP
 
-if [ -n "${OPT_FILTERS[*]}" ]; then
-    if unknown="$(grep -vxFf <(printf '%s\n' "${FILTERTYPES[@]}") <(printf '%s\n' "${OPT_FILTERS[@]}"))"; then
+if [ -n "${OPT_FILTERS[*]:-"${FILTERS[*]}"}" ]; then
+    if unknown="$(grep -vxFf <(printf '%s\n' "${FILTERTYPES[@]}") <(printf '%s\n' "${OPT_FILTERS[@]:-"${FILTERS[@]}"}"))"; then
         error "Unknown filters: ${unknown}"
         exit 1
     fi
@@ -899,8 +1017,13 @@ trap 'rm -fr "${TMPDIR}";exit' INT TERM EXIT
 
 lock
 debug 2 "URL-List: ${URLS[*]}"
-debug 2 "Privoxy-Configdir: ${PRIVOXY_DIR}"
+debug 2 "Target directory for lists: ${LISTS_DIR}"
 debug 2 "Temporary directory: ${TMPDIR}"
+if [ "${ACTIVATE}" -eq 0 ]; then
+    debug 2 "Running in Convert Mode"
+else
+    debug 2 "Running in Activate Mode"
+fi
 "${method}"
 
 # restore default exit command
@@ -909,3 +1032,5 @@ if [ "${DBG}" -lt 3 ]; then
     rm -r "${VERBOSE[@]}" "${TMPDIR}"
 fi
 exit 0
+
+# vim: ts=4 sw=4 et

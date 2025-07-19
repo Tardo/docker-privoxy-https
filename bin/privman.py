@@ -37,12 +37,13 @@ def generate_crt_bundle(subj, forced=False):
     if not os.path.isfile(ca_bundle_file) or forced:
         os.system(f"openssl ecparam -out {ca_key_file} -name secp384r1 -genkey")
         os.system(
-            f'openssl req -new -x509 '
+            'openssl req -new -x509 '
             f'-key {ca_key_file} -sha384 -days 3650 '
             f'-out {ca_bundle_file} '
             f'-subj "{subj}" '
-            f'-addext "basicConstraints=critical,CA:TRUE" '
-            f'-addext "keyUsage=critical,keyCertSign,cRLSign"'
+            '-addext "basicConstraints=critical,CA:TRUE" '
+            '-addext "keyUsage=critical,keyCertSign,cRLSign" '
+            '-addext "subjectKeyIdentifier=hash"'
         )
         print_log("CRT Bundle", f"Generated successfully in '{ca_bundle_file}'") 
     else:
