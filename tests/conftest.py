@@ -5,13 +5,14 @@ import time
 import requests
 import pytest
 from python_on_whales import DockerClient
+import platform
 
 PRIVOXY_PORT = "8118"
 
 
 def pytest_addoption(parser):
     parser.addoption('--no-cache', action='store_true', default=False)
-    parser.addoption('--privoxy-version', action='store', default="3.0.34")
+    parser.addoption('--privoxy-version', action='store', default="4.0.0")
 
 @pytest.fixture(scope='session')
 def docker_build(pytestconfig):
@@ -60,7 +61,12 @@ def docker_privoxy(docker_build):
 @pytest.fixture(scope='session')
 def make_request():
     def _run(url, docker_container, use_privoxy_ca_bundle=True):
-        proxy_ip = docker_container.network_settings.ip_address
+        # Detect Windows/MacOS host: Docker Desktop needs localhost proxy
+        print(f"platform.system(): {platform.system()}")
+        if platform.system().lower().startswith(('win', 'darwin')):
+            proxy_ip = '127.0.0.1'
+        else:
+            proxy_ip = docker_container.network_settings.ip_address
         return requests.get(url, proxies={
             'http': f'{proxy_ip}:{PRIVOXY_PORT}',
             'https': f'{proxy_ip}:{PRIVOXY_PORT}',

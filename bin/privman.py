@@ -36,7 +36,14 @@ def generate_crt_bundle(subj, forced=False):
     ca_key_file = os.path.join(BASEDIR_CA, 'cakey.pem')
     if not os.path.isfile(ca_bundle_file) or forced:
         os.system(f"openssl ecparam -out {ca_key_file} -name secp384r1 -genkey")
-        os.system(f'openssl req -new -x509 -key {ca_key_file} -sha384 -days 3650 -out {ca_bundle_file} -extensions v3_ca -subj "{subj}"')
+        os.system(
+            f'openssl req -new -x509 '
+            f'-key {ca_key_file} -sha384 -days 3650 '
+            f'-out {ca_bundle_file} '
+            f'-subj "{subj}" '
+            f'-addext "basicConstraints=critical,CA:TRUE" '
+            f'-addext "keyUsage=critical,keyCertSign,cRLSign"'
+        )
         print_log("CRT Bundle", f"Generated successfully in '{ca_bundle_file}'") 
     else:
         print_log("CRT Bundle", "Nothing to do. The file already exists.")
