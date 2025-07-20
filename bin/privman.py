@@ -16,7 +16,7 @@ ADBLOCK_DYN_FILE = os.path.join(BASE_LIB_DIR, 'adblock-dyn.conf')
 RULES = {
     'WHITELIST': "{ -block -filter }",
     'SOFT_WHITELIST': "{ allow-ads }",
-    'BLACKLIST': "{ +block }",
+    'BLOCKLIST': "{ +block }",
 }
 
 
@@ -139,28 +139,28 @@ def remove_whitelist(urls):
             print_log("Whitelist", f"The url '{url}' already not present")
     return has_changes
 
-def add_blacklist(urls):
+def add_blocklist(urls):
     user_action_file = os.path.join(BASEDIR_RULES, 'user.action')
     has_changes = False
     for url in urls:
-        res = _append_to(user_action_file, RULES['BLACKLIST'], url)
+        res = _append_to(user_action_file, RULES['BLOCKLIST'], url)
         if res:
-            print_log("Blacklist", f"URL '{url}' added successfully")
+            print_log("Blocklist", f"URL '{url}' added successfully")
             has_changes = True
         else:
-            print_log("Blacklist", f"The url '{url}' already exists")
+            print_log("Blocklist", f"The url '{url}' already exists")
     return has_changes
     
-def remove_blacklist(urls):
+def remove_blocklist(urls):
     user_action_file = os.path.join(BASEDIR_RULES, 'user.action')
     has_changes = False
     for url in urls:
-        res = _remove_from(user_action_file, RULES['BLACKLIST'], url)
+        res = _remove_from(user_action_file, RULES['BLOCKLIST'], url)
         if res:
-            print_log("Blacklist", f"URL '{url}' removed successfully")
+            print_log("Blocklist", f"URL '{url}' removed successfully")
             has_changes = True
         else:
-            print_log("Blacklist", f"The url '{url}' already not present")
+            print_log("Blocklist", f"The url '{url}' already not present")
     return has_changes
 
 if __name__ == '__main__':
@@ -217,17 +217,19 @@ if __name__ == '__main__':
         nargs="+",
         help='Remove URL from the whitelist')
     parser.add_argument(
+        '--add-blocklist',
         '--add-blacklist',
         type=str,
         action="extend", 
         nargs="+",
-        help='Add URL to the blacklist')
+        help='Add URL to the blocklist')
     parser.add_argument(
+        '--remove-blocklist',
         '--remove-blacklist',
         type=str,
         action="extend", 
         nargs="+",
-        help='Remove URL from the blacklist')
+        help='Remove URL from the blocklist')
     args = parser.parse_args()
     need_restart = False
 
@@ -247,9 +249,9 @@ if __name__ == '__main__':
         need_restart = add_whitelist(args.add_whitelist, soft_mode=True)
     if args.remove_whitelist:
         need_restart = remove_whitelist(args.remove_whitelist)
-    if args.add_blacklist:
-        need_restart = add_blacklist(args.add_blacklist)
-    if args.remove_blacklist:
-        need_restart = remove_blacklist(args.remove_blacklist)
+    if args.add_blocklist:
+        need_restart = add_blocklist(args.add_blocklist)
+    if args.remove_blocklist:
+        need_restart = remove_blocklist(args.remove_blocklist)
     if args.restart or need_restart:
         restart_privoxy()

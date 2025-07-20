@@ -24,13 +24,13 @@ class TestPrivoxyContainer:
         with pytest.raises(SSLError):
             make_request('https://google.com', docker_privoxy, use_privoxy_ca_bundle=False)
 
-    def test_blacklist(self, docker_privoxy, make_request, exec_privman):
-        resp = exec_privman(docker_privoxy, "--add-blacklist", ".google.")
+    def test_blocklist(self, docker_privoxy, make_request, exec_privman):
+        resp = exec_privman(docker_privoxy, "--add-blocklist", ".google.")
         assert "successfully" in resp
         time.sleep(3)
         resp = make_request('http://google.com', docker_privoxy)
         assert self._is_blocked_by_privoxy(resp) == True
-        resp = exec_privman(docker_privoxy, "--remove-blacklist", ".google.")
+        resp = exec_privman(docker_privoxy, "--remove-blocklist", ".google.")
         assert "successfully" in resp
         time.sleep(3)
         resp = make_request('https://google.com', docker_privoxy)
