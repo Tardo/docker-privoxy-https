@@ -35,7 +35,7 @@ RUN set -eux; \
         pcre2-dev \
         $PRIVOXY_BUILD_EXTRA; \
     mkdir -p /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
-    wget --progress=dot:giga -O /var/lib/privoxy/privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
+    wget -qO /var/lib/privoxy/privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
     echo "${PRIVOXY_SRC_SHA1SUM} /var/lib/privoxy/privoxy-src.tar.gz" | sha1sum -c; \
     tar -zxvf /var/lib/privoxy/privoxy-src.tar.gz -C /usr/local/src/; \
     cd /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
@@ -58,9 +58,10 @@ RUN set -eux; \
             $SYSTEM_EXTRA_PKGS;
 
 # Enable Privoxy HTTPS inspection
+# hadolint ignore=SC1003
 RUN set -ex; \
     mv /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \
-    sed -i '/^+set-image-blocker{pattern}/a +https-inspection ' /usr/local/etc/privoxy/match-all.action;
+    sed -i '/^+set-image-blocker{pattern}/a +https-inspection \\' /usr/local/etc/privoxy/match-all.action;
 
 # Copy project scripts/configs
 COPY data/rules/ /usr/local/etc/privoxy/privman-rules/
