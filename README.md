@@ -88,7 +88,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 ## :computer: Privoxy Compiler Options
 
 - --disable-toggle
-- --disable-editor 
-- --disable-force 
-- --with-openssl 
+- --disable-editor
+- --disable-force
+- --with-openssl
 - --with-brotli

@@ -140,6 +140,19 @@ files = [
 ]
 
 [[package]]
+name = "hadolint-bin"
+version = "2.12.0"
+description = " A thin wrapper to distribute https://github.com/hadolint/hadolint via pip."
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "hadolint_bin-2.12.0-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:6cc9727f55726911386cb4fccd434f838b2712092d7261bc67e133a6abec09e5"},
+    {file = "hadolint_bin-2.12.0-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:fc5ee29a6d7f27ff5e909e984100afadb9dc86d79af8b7aea50d558ba3e1cbdd"},
+    {file = "hadolint_bin-2.12.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:da5534320a54895f1a7d040b1a16e421117043bcab1a18c4a3ff1088031809ef"},
+]
+
+[[package]]
 name = "idna"
 version = "3.10"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -451,4 +464,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "9a65d04e4070f8329e25f2664ee239787d0e60b8bfb173e93892cd44a369947f"
+content-hash = "ab9c37c9def42f66b557aa96526c5fce94f7645b5bfb5a2b77e3f7b11e5a5aca"
