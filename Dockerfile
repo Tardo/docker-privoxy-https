@@ -15,6 +15,7 @@ RUN set -ex; \
     chown privoxy:privoxy /var/lib/privoxy/;
 
 ARG PRIVOXY_VERSION=4.0.0
+ARG PRIVOXY_SRC_SHA1SUM=d302cb0bf23536e67a1b5505d01486a335d9c4c0
 ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli"
 ARG PRIVOXY_BUILD_EXTRA="openssl-dev brotli-dev"
 ARG SYSTEM_EXTRA_PKGS="openssl brotli net-tools"
@@ -33,6 +34,7 @@ RUN set -eux; \
         $PRIVOXY_BUILD_EXTRA; \
     mkdir -p /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     wget -O /var/lib/privoxy/privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
+    echo "${PRIVOXY_SRC_SHA1SUM} /var/lib/privoxy/privoxy-src.tar.gz" | sha1sum -c; \
     tar -zxvf /var/lib/privoxy/privoxy-src.tar.gz -C /usr/local/src/; \
     cd /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     autoheader; \
