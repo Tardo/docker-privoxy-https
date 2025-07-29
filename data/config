@@ -480,7 +480,7 @@ filterfile privman-rules/user.filter      # Privman customizations
 #      require additional software to do it. For details, please
 #      refer to the documentation for your operating system.
 #
-logfile /var/log/privoxy/privoxy.log
+#logfile logfile
 #
 #  2.8. trustfile
 #  ===============
@@ -619,10 +619,10 @@ debug     1 # Log the destination for each request. See also debug 1024.
 #debug   128 # debug redirects
 #debug   256 # debug GIF de-animation
 debug   512 # Common Log Format
-#debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
+debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
 #debug  4096 # Startup banner and warnings
-#debug  8192 # Non-fatal errors
-debug 65536 # Log applying actions
+debug  8192 # Non-fatal errors
+#debug 65536 # Log applying actions
 #
 #  3.2. single-threaded
 #  =====================
@@ -1713,7 +1713,7 @@ split-large-forms 0
 #
 #      keep-alive-timeout 300
 #
-keep-alive-timeout 600
+keep-alive-timeout 120
 #
 #  6.5. tolerate-pipelining
 #  =========================
@@ -1918,7 +1918,7 @@ tolerate-pipelining 0
 #
 #      socket-timeout 300
 #
-socket-timeout 5
+socket-timeout 30
 #
 #  6.9. max-client-connections
 #  ============================
@@ -1982,7 +1982,7 @@ socket-timeout 5
 #
 #      max-client-connections 256
 #
-max-client-connections 512
+max-client-connections 256
 #
 #  6.10. listen-backlog
 #  =====================
@@ -2036,7 +2036,7 @@ max-client-connections 512
 #
 #      listen-backlog 4096
 #
-listen-backlog -1
+listen-backlog 128
 #
 #  6.11. enable-accept-filter
 #  ===========================
@@ -2443,7 +2443,7 @@ listen-backlog -1
 #            # Increase the receive buffer size
 #            receive-buffer-size 32768
 #
-receive-buffer-size 65536
+receive-buffer-size 32768
 #
 #  7. HTTPS INSPECTION
 #  ====================
@@ -2747,7 +2747,7 @@ certificate-directory /usr/local/etc/privoxy/certs
 #        AES128-SHA
 #
 #          # Use keywords instead of explicitly naming the ciphers (Does not work with MbedTLS)
-cipher-list ALL:!EXPORT:!EXPORT40:!EXPORT56:!aNULL:!LOW:!RC4:@STRENGTH
+cipher-list ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
 #
 #
 #  7.7. trusted-cas-file
