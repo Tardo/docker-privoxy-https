@@ -1,8 +1,6 @@
 name: Test
 
 on:
-  push:
-    branches: [4.0.0]
   pull_request:
     branches: [4.0.0]
   workflow_call:
@@ -32,7 +30,7 @@ jobs:
             ~/.cache/pre-commit
             .venv
             .cache
-          key: ${{ runner.os }}-{{ hashFiles('**/.pre-commit-config.yaml') }}
+          key: ${{ runner.os }}-{{ hashFiles('**/.pre-commit-config.yaml', '**/poetry.lock') }}
       - name: Install dependencies
         run: |
           poetry config virtualenvs.in-project true
