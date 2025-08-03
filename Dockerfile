@@ -34,18 +34,17 @@ RUN set -eux; \
         zlib-dev \
         pcre2-dev \
         $PRIVOXY_BUILD_EXTRA; \
-    mkdir -p /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
     wget -qO /var/lib/privoxy/privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
     echo "${PRIVOXY_SRC_SHA1SUM} /var/lib/privoxy/privoxy-src.tar.gz" | sha1sum -c; \
-    tar -zxvf /var/lib/privoxy/privoxy-src.tar.gz -C /usr/local/src/; \
-    cd /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
+    tar -zxvf /var/lib/privoxy/privoxy-src.tar.gz -C /var/lib/privoxy/; \
+    cd /var/lib/privoxy/privoxy-${PRIVOXY_VERSION}-stable; \
     autoheader; \
     autoconf; \
     ./configure $PRIVOXY_CONFIG_OPTIONS; \
     make; \
     make -s install USER=privoxy GROUP=privoxy; \
     chown -R privoxy:privoxy /usr/local/etc/privoxy/; \
-    rm -rf /var/lib/privoxy/privoxy-src.tar.gz /usr/local/src/privoxy-${PRIVOXY_VERSION}-stable; \
+    rm -rf /var/lib/privoxy/privoxy-src.tar.gz /var/lib/privoxy/privoxy-${PRIVOXY_VERSION}-stable; \
     apk del build-tools build-deps;
 
 # Add system tools
@@ -68,35 +67,33 @@ COPY data/rules/ /usr/local/etc/privoxy/privman-rules/
 COPY data/config /usr/local/etc/privoxy/
 COPY data/privoxy-blocklist.conf /var/lib/privoxy/
 RUN set -eux; \
+    # Remove CRLF (dos2unix) and ensure LF-only
     sed -i 's/\r$//' /var/lib/privoxy/privoxy-blocklist.conf
 COPY bin/privman.py /var/lib/privoxy/privman.py
+RUN set -ex; \
+    sed -i 's/\r$//' /var/lib/privoxy/privman.py; \
+    head -1 /var/lib/privoxy/privman.py | grep -q '^#!' || \
+        sed -i '1i #!/usr/bin/env python3' /var/lib/privoxy/privman.py; \
+    chmod +x /var/lib/privoxy/privman.py; \
+    ln -sf /var/lib/privoxy/privman.py /usr/local/sbin/privman;
 COPY bin/privoxy-blocklist.sh /var/lib/privoxy/privoxy-blocklist.sh
 RUN set -eux; \
-    # Remove CRLF (dos2unix) and ensure LF-only
     sed -i 's/\r$//' /var/lib/privoxy/privoxy-blocklist.sh; \
-    # Make executable
     chmod +x /var/lib/privoxy/privoxy-blocklist.sh; \
-    # (Re)create the symlink
-    ln -sf /var/lib/privoxy/privoxy-blocklist.sh /usr/local/bin/privoxy-blocklist
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
- && chmod +x /usr/local/bin/docker-entrypoint.sh
+    ln -sf /var/lib/privoxy/privoxy-blocklist.sh /usr/local/sbin/privoxy-blocklist;
+COPY docker-entrypoint.sh /usr/local/sbin/
+RUN sed -i 's/\r$//' /usr/local/sbin/docker-entrypoint.sh && \
+        chmod +x /usr/local/sbin/docker-entrypoint.sh;
 
 # Set the correct permissions
 RUN set -ex; \
-    sed -i 's/\r$//' /var/lib/privoxy/privman.py /var/lib/privoxy/privoxy-blocklist.sh; \
-    head -1 /var/lib/privoxy/privman.py | grep -q '^#!' || \
-      sed -i '1i #!/usr/bin/env python3' /var/lib/privoxy/privman.py; \
     mkdir -p /var/log/privoxy /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules; \
-    chown -R privoxy:privoxy /var/log/privoxy/ /usr/local/etc/privoxy/config /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules /var/lib/privoxy/privoxy-blocklist.conf; \
-    chmod +x /var/lib/privoxy/privman.py; \
-    ln -sf /var/lib/privoxy/privman.py /usr/local/sbin/privman; \
-    ln -sf /var/lib/privoxy/privoxy-blocklist.sh /usr/local/sbin/privoxy-blocklist;
+    chown -R privoxy:privoxy /var/log/privoxy/ /usr/local/etc/privoxy/config /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules /var/lib/privoxy/privoxy-blocklist.conf;
 
 ENV ADBLOCK_URLS="" \
     ADBLOCK_FILTERS=""
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/docker-entrypoint.sh"]
 
 RUN cp -a /usr/local/etc/privoxy /opt/privoxy-default
 

@@ -8,6 +8,7 @@ from python_on_whales import DockerClient
 import platform
 
 PRIVOXY_PORT = "8118"
+IMAGE_TAG_NAME = "test:docker-privoxy-https"
 
 
 def pytest_addoption(parser):
@@ -25,7 +26,7 @@ def docker_build(pytestconfig):
         build_args={
             "PRIVOXY_VERSION": privoxy_ver,
         },
-        tags="test:docker-privoxy-https",
+        tags=IMAGE_TAG_NAME,
         cache=not no_cache,
     )
     return docker
@@ -36,7 +37,7 @@ def docker_privoxy(docker_build):
     container = None
     try:
         container = docker_build.container.run(
-            "test:docker-privoxy-https",
+            IMAGE_TAG_NAME,
             volumes=[
                 ("pytest-privoxy", "/usr/local/etc/privoxy"),
             ],
