@@ -30,7 +30,7 @@ jobs:
             ~/.cache/pre-commit
             .venv
             .cache
-          key: ${{ runner.os }}-{{ hashFiles('**/.pre-commit-config.yaml', '**/poetry.lock') }}
+          key: ${{ runner.os }}-{{ hashFiles('**/poetry.lock') }}-{{ hashFiles('**/.pre-commit-config.yaml') }}
       - name: Install dependencies
         run: |
           poetry config virtualenvs.in-project true
