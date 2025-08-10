@@ -6,6 +6,8 @@ import os
 import argparse
 import subprocess
 import urllib.request
+import signal
+
 
 BASE_LIB_DIR = "/var/lib/privoxy"
 BASE_DIR = "/usr/local/etc/privoxy"
@@ -52,20 +54,56 @@ def generate_crt_bundle(subj, forced=False):
         print_log("CRT Bundle", "Nothing to do. The file already exists.")
 
 
-def update_adblock_filters():
-    adblock_filters = " ".join(
-        map(lambda x: f'"{x}"', os.environ.get("ADBLOCK_FILTERS", "").split(" "))
-    )
-    adblock_urls = " ".join(
-        map(lambda x: f'"{x}"', os.environ.get("ADBLOCK_URLS", "").split(" "))
-    )
-    lines = [f"URLS=({adblock_urls})", f"\nFILTERS=({adblock_filters})"]
-    with open(ADBLOCK_DYN_FILE, "w") as f:
-        f.writelines(lines)
+def init_adblock_filters():
     subprocess.run(
-        ["privoxy-blocklist", "-c", "/var/lib/privoxy/privoxy-blocklist.conf"]
+        [
+            "adblock2privoxy",
+            "-p",
+            "/usr/local/etc/privoxy",
+            "-w",
+            "/usr/local/etc/adblock2privoxy/css",
+            "-d",
+            os.environ.get("ADBLOCK_CSS_DOMAIN", ""),
+            "-t",
+            "/usr/local/etc/privoxy/ab2p.task",
+            os.environ.get("ADBLOCK_URLS", ""),
+        ]
     )
     return True
+
+
+def update_adblock_filters():
+    subprocess.run(
+        [
+            "adblock2privoxy",
+            "-t",
+            "/usr/local/etc/privoxy/ab2p.task",
+        ]
+    )
+    return True
+
+
+def _get_privoxy_pid():
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open(f"/proc/{pid}/comm", "r") as f:
+                proc_name = f.read().strip()
+                if proc_name.lower() == "privoxy":
+                    return int(pid)
+        except (IOError, FileNotFoundError):
+            continue
+    return None
+
+
+def restart_privoxy():
+    privoxy_pid = _get_privoxy_pid()
+    if privoxy_pid:
+        os.kill(privoxy_pid, signal.SIGHUP)
+        print_log("Privoxy", "Restarted successfully")
+    else:
+        print_log("Privoxy", "Can't found the PID of privoxy")
 
 
 def _get_section_index(rules, section):
@@ -123,11 +161,6 @@ def _remove_from(filename, section_name, url):
         with open(filename, "w") as f:
             f.writelines(rules)
     return need_write
-
-
-def restart_privoxy():
-    os.system("kill -HUP `cat /tmp/supervisord_privoxy.pid`")
-    print_log("Privoxy", "Restarted successfully")
 
 
 def add_whitelist(urls, soft_mode=False):
@@ -270,8 +303,8 @@ if __name__ == "__main__":
 
     if args.init:
         update_trusted_ca()
-        update_adblock_filters()
         generate_crt_bundle(args.crt_bundle_subj)
+        init_adblock_filters()
     if args.update_trusted_ca:
         need_restart = update_trusted_ca(forced=True)
     if args.regenerate_crt_bundle:

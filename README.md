@@ -4,7 +4,7 @@
 
 Alpine docker with [privoxy](https://www.privoxy.org) enabled and configured to work with HTTPS.
 
-It also includes the script made by '[Andrwe Lord Weber](https://github.com/Andrwe/privoxy-blocklist)' to translate adblock rules to privoxy.
+It also includes '[adblock2privoxy](https://github.com/essandess/adblock2privoxy)' to translate adblock rules to privoxy with CSS hidden elements & blackhole.
 
 **The default configuration is intended for personal use only (ex. raspberry)**
 
@@ -20,10 +20,9 @@ Privoxy Status Page: https://config.privoxy.org/show-status
 | Name | Description | Default |
 |----------------|-------------|-------------|
 | ADBLOCK_URLS | String of urls separated by spaces | "" |
-| ADBLOCK_FILTERS | String of filters separated by spaces | "" |
+| ADBLOCK_CSS_DOMAIN | A domain/IP that points to the container (IP:PORT) | 172.17.0.2:8119 |
 
 - Can get urls from: https://easylist.to/
-- Can know the available filters with ```docker exec privoxy privoxy-blocklist --help```
 
 ### Docker
 ```sh
@@ -39,9 +38,11 @@ services:
     container_name: privoxy
     ports:
       - 8118:8118
+      - 8119:8119
     environment:
-      - TZ=Europe/Madrid
-      - ADBLOCK_URLS=https://easylist.to/easylist/easylist.txt
+      TZ: Europe/Madrid
+      ADBLOCK_URLS: https://easylist.to/easylist/easylist.txt
+      ADBLOCK_CSS_DOMAIN: privoxy.local:8119
     volumes:
       - privoxy-ca:/usr/local/etc/privoxy/CA
     restart: unless-stopped
@@ -50,6 +51,8 @@ services:
 volumes:
     privoxy-ca:
 ```
+
+** privoxy.local must point to the container
 
 ### Get ca-bundle
 ```sh
@@ -61,7 +64,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - Update the Trusted CA file: `docker exec privoxy privman --update-trusted-ca`
 - Regenerate the .crt bundle: `docker exec privoxy privman --regenerate-crt-bundle`
 - Update 'adblock' filters: `docker exec privoxy privman --update-adblock-filters`
-- Block a domain to the blocklist: `docker exec privoxy privman --add-blocklist .google. .facebook.`
+- Add a domain to the blocklist: `docker exec privoxy privman --add-blocklist .google. .facebook.`
 - Remove a domain from the blocklist: `docker exec privoxy privman --remove-blocklist .facebook.`
 
 ## :page_facing_up: Configuration highlight changes

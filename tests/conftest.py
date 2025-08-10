@@ -9,6 +9,9 @@ import platform
 
 PRIVOXY_PORT = "8118"
 IMAGE_TAG_NAME = "test:docker-privoxy-https"
+SUBNET = "172.20.0.0/16"
+GATEWAY = "172.20.0.1"
+IP_ADDRESS = "172.20.0.5"
 
 
 def pytest_addoption(parser):
@@ -28,6 +31,7 @@ def docker_build(pytestconfig):
         },
         tags=IMAGE_TAG_NAME,
         cache=not no_cache,
+        target="runtime",
     )
     return docker
 
@@ -35,22 +39,32 @@ def docker_build(pytestconfig):
 @pytest.fixture(scope="session")
 def docker_privoxy(docker_build):
     container = None
+    network = None
     try:
+        if not docker_build.network.exists("pytest-privoxy-network"):
+            network = docker_build.network.create(
+                "pytest-privoxy-network",
+                driver="bridge",
+                subnet=SUBNET,
+                gateway=GATEWAY,
+            )
         container = docker_build.container.run(
             IMAGE_TAG_NAME,
             volumes=[
                 ("pytest-privoxy", "/usr/local/etc/privoxy"),
             ],
-            publish=[(PRIVOXY_PORT, PRIVOXY_PORT)],
+            networks=["pytest-privoxy-network"],
+            ip=IP_ADDRESS,
+            publish=[(PRIVOXY_PORT, PRIVOXY_PORT), ("8119", "8119")],
             envs={
-                "ADBLOCK_URLS": "https://easylist.to/easylist/easylist.txt",
-                "ADBLOCK_FILTERS": '"attribute_global_name attribute_global_exact attribute_global_contain attribute_global_startswith attribute_global_endswith class_global id_global"',
+                "ADBLOCK_URLS": "https://easylist-downloads.adblockplus.org/easylist.txt",
+                "ADBLOCK_CSS_DOMAIN": f"{IP_ADDRESS}:8119",
             },
             name="privoxy-pytest",
             remove=True,
             detach=True,
         )
-        time.sleep(5)  # Wait for service
+        time.sleep(20)  # Wait for service. FIXME: found a better way...
         docker_build.copy(
             ("privoxy-pytest", "/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt"),
             "./tests/privoxy-ca-bundle.crt",
@@ -60,25 +74,21 @@ def docker_privoxy(docker_build):
         if container:
             docker_build.container.kill(container)
             time.sleep(5)  # Wait for docker
+        if network:
+            docker_build.network.remove("pytest-privoxy-network")
         docker_build.volume.remove("pytest-privoxy")
 
 
 @pytest.fixture(scope="session")
 def make_request():
-    def _run(url, docker_container, use_privoxy_ca_bundle=True):
-        # Detect Windows/MacOS host: Docker Desktop needs localhost proxy
-        print(f"platform.system(): {platform.system()}")
-        if platform.system().lower().startswith(("win", "darwin")):
-            proxy_ip = "127.0.0.1"
-        else:
-            proxy_ip = docker_container.network_settings.ip_address
+    def _run(url, use_privoxy_ca_bundle=True):
         return requests.get(
             url,
             proxies={
-                "http": f"{proxy_ip}:{PRIVOXY_PORT}",
-                "https": f"{proxy_ip}:{PRIVOXY_PORT}",
+                "http": f"{IP_ADDRESS}:{PRIVOXY_PORT}",
+                "https": f"{IP_ADDRESS}:{PRIVOXY_PORT}",
             },
-            verify="./tests/privoxy-ca-bundle.crt" if use_privoxy_ca_bundle else None,
+            verify=f"./tests/privoxy-ca-bundle.crt" if use_privoxy_ca_bundle else None,
         )
 
     return _run

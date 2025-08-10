@@ -386,6 +386,8 @@ actionsfile match-all.action # Actions that are applied to all sites and maybe o
 actionsfile default.action   # Main actions file
 actionsfile user.action      # User customizations
 actionsfile privman-rules/user.action   # Privman customizations
+actionsfile ab2p.system.action	# adblock2privoxy
+actionsfile ab2p.action			# adblock2privoxy
 #actionsfile regression-tests.action     # Tests for privoxy-regression-test
 #
 #  2.6. filterfile
@@ -433,6 +435,8 @@ actionsfile privman-rules/user.action   # Privman customizations
 filterfile default.filter
 filterfile user.filter      # User customizations
 filterfile privman-rules/user.filter      # Privman customizations
+filterfile ab2p.system.filter 	# adblock2privoxy
+filterfile ab2p.filter			# adblock2privoxy
 #
 #  2.7. logfile
 #  =============
