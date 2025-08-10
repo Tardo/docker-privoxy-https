@@ -63,6 +63,7 @@ jobs:
           build-args: |
             PRIVOXY_VERSION=${{ env.PRIVOXY_VERSION }}
           push: true
+          target: runtime
           labels: |
             org.opencontainers.image.authors=${{ github.repository_owner }}
             org.opencontainers.image.created=${{ env.BUILD_DATE }}
@@ -90,6 +91,7 @@ jobs:
           build-args: |
             PRIVOXY_VERSION=${{ env.PRIVOXY_VERSION }}
           push: true
+          target: runtime
           labels: |
             org.opencontainers.image.authors=${{ github.repository_owner }}
             org.opencontainers.image.created=${{ env.BUILD_DATE }}
