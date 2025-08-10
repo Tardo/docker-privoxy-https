@@ -49,14 +49,18 @@ RUN set -eux; \
         make \
         curl \
         gmp \
-        git; \
+        git \
+        ghc \
+        cabal \
+        stack; \
     apk add --no-cache --virtual build-deps \
         musl-dev \
         zlib-dev \
         gmp-dev \
         ncurses-libs \
-        ncurses-dev; \
-    curl -sSL https://get.haskellstack.org/ | sh;
+        ncurses-dev \
+        xz;
+    #curl -sSL https://get.haskellstack.org/ | sh;
 
 RUN set -eux; \
     git clone https://github.com/essandess/adblock2privoxy.git . --depth=1; \
