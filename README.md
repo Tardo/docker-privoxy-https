@@ -105,6 +105,21 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 | /usr/local/etc/privoxy/certs | Where privoxy stores the downloaded certificates |
 | /var/lib/privoxy | Where are the scripts related to privoxy |
 
+## :wrench: Custom configuration
+
+- If want privman blocking need add:
+    ```yaml
+    actionsfile privman-rules/user.action
+    filterfile privman-rules/user.filter
+    ```
+- If want adblock2privoxy blocking need add:
+    ```yaml
+    actionsfile ab2p.system.action
+    actionsfile ab2p.action
+    filterfile ab2p.system.filter
+    filterfile ab2p.filter
+    ```
+
 ## :computer: Privoxy Compiler Options
 
 - --disable-toggle
