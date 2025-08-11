@@ -152,7 +152,6 @@ def _get_section_index(rules, section):
 
 def _get_url_rule_index(rules, start, url):
     for index, rule in enumerate(rules[start:], start):
-        print("IT: ", start, "----", index, " --- ", rule)
         if rule.strip() == url:
             return index
         if rule.startswith("{"):

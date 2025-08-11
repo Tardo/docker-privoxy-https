@@ -91,11 +91,10 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - `filterfile privman-rules/user.filter` > Predefined privman aliases
 - `buffer-limit` > Increased to 25600KB (25MB)
 - `keep-alive-timeout` > Increased to 120 seconds
-- `socket-timeout` > Decreased to 30 seconds
+- `socket-timeout` > Decreased to 150 seconds
 - `max-client-connections` > Increased to 256
 - `listen-backlog` > Set to 128
 - `receive-buffer-size` > Increased to 32768 bytes
-- `tolerate-pipelining` > Disabled
 
 ## :bookmark: Points of Interest
 
