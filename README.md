@@ -2,9 +2,10 @@
 
 ## :page_with_curl: About
 
-Alpine docker with [privoxy](https://www.privoxy.org) enabled and configured to work with HTTPS.
+Image with [privoxy](https://www.privoxy.org) enabled and configured to work with HTTPS.
 
 It also includes '[adblock2privoxy](https://github.com/essandess/adblock2privoxy)' to translate adblock rules to privoxy with CSS hidden elements & blackhole.
+This means that this image also includes an nginx server so that the advanced CSS rules work correctly.
 
 **The default configuration is intended for personal use only (ex. raspberry)**
 
@@ -14,13 +15,26 @@ This image downloads the 'trustedCAs' file from curl.se and also generates the c
 
 Privoxy Status Page: https://config.privoxy.org/show-status
 
+### Default Ports
+
+| PORT | Description | Required |
+|----------------|-------------|-------------|
+| 8118 | Privoxy | [x] |
+| 80 | Nginx | [] |
+| 443 | Nginx SSL | [] |
+
 
 ### Env. Variables
 
 | Name | Description | Default |
 |----------------|-------------|-------------|
+| PRIVOXY_PORT | The Privoxy port | 8118 |
 | ADBLOCK_URLS | String of urls separated by spaces | "" |
-| ADBLOCK_CSS_DOMAIN | A domain/IP that points to the container (IP:PORT) | 172.17.0.2:8119 |
+| ADBLOCK_CSS_DOMAIN | A domain/IP that points to the container (IP:PORT) | 172.17.0.2 |
+| ADBLOCK_NGINX_ENABLED | The server to use to get the css files | true |
+| NGINX_SERVER_NAME | The server name for verification process (must coincide with ADBLOCK_CSS_DOMAIN name part) | 172.17.0.2 |
+| NGINX_PORT | The HTTP port | 80 |
+| NGINX_PORT_SSL | The HTTPS port | 443 |
 
 - Can get urls from: https://easylist.to/
 
@@ -38,11 +52,13 @@ services:
     container_name: privoxy
     ports:
       - 8118:8118
-      - 8119:8119
+      - 80:80
+      - 443:443
     environment:
       TZ: Europe/Madrid
       ADBLOCK_URLS: https://easylist.to/easylist/easylist.txt
-      ADBLOCK_CSS_DOMAIN: privoxy.local:8119
+      ADBLOCK_CSS_DOMAIN: privoxy.local
+      NGINX_SERVER_NAME: privoxy.local
     volumes:
       - privoxy-ca:/usr/local/etc/privoxy/CA
     restart: unless-stopped
@@ -77,6 +93,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - `max-client-connections` > Increased to 256
 - `listen-backlog` > Set to 128
 - `receive-buffer-size` > Increased to 32768 bytes
+- `tolerate-pipelining` > Disabled
 
 ## :bookmark: Points of Interest
 

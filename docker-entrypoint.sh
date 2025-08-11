@@ -2,7 +2,8 @@
 set -e
 privman --init
 
-if [ -n "$ADBLOCK_URLS" ]; then
+if $ADBLOCK_NGINX_ENABLED && [ -n "$ADBLOCK_URLS" ]; then
+  envsubst '$NGINX_SERVER_NAME $NGINX_PORT $NGINX_PORT_SSL' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
   nginx
 fi
 

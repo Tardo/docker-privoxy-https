@@ -1,28 +1,31 @@
-FROM alpine:latest AS build-privoxy
+FROM debian:stable-slim AS build-privoxy
 
 ARG PRIVOXY_VERSION=4.0.0
 ARG PRIVOXY_SRC_SHA1SUM=d302cb0bf23536e67a1b5505d01486a335d9c4c0
 ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli"
-ARG PRIVOXY_BUILD_EXTRA="openssl-dev brotli-dev"
+ARG PRIVOXY_BUILD_EXTRA="libssl-dev libbrotli-dev"
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 WORKDIR /build
 
 RUN set -eux; \
-    apk add --no-cache --virtual build-tools \
-        gcc \
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
         autoconf \
-        make \
-        git; \
-    apk add --no-cache --virtual build-deps \
-        libc-dev \
-        zlib-dev \
-        pcre2-dev \
-        $PRIVOXY_BUILD_EXTRA;
+        ca-certificates \
+        git \
+        curl \
+        libc6-dev \
+        zlib1g-dev \
+        libpcre2-dev \
+        $PRIVOXY_BUILD_EXTRA; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
+# hadolint ignore=DL3003
 RUN set -eux; \
-    wget -qO privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
+    curl -L -o privoxy-src.tar.gz https://sourceforge.net/projects/ijbswa/files/Sources/${PRIVOXY_VERSION}%20%28stable%29/privoxy-${PRIVOXY_VERSION}-stable-src.tar.gz/download; \
     echo "${PRIVOXY_SRC_SHA1SUM} privoxy-src.tar.gz" | sha1sum -c; \
     tar -zxvf privoxy-src.tar.gz; \
     cd privoxy-${PRIVOXY_VERSION}-stable; \
@@ -34,34 +37,23 @@ RUN set -eux; \
     privoxy --version;
 
 
-FROM alpine:latest AS build-adblock2privoxy
+FROM haskell:slim AS build-adblock2privoxy
 
 ARG ADBLOCK2PRIVOXY_RESOLVER=lts-21.25
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 WORKDIR /build
 
 RUN set -eux; \
-    apk add --no-cache --virtual build-tools \
-        gcc \
-        g++ \
-        make \
-        curl \
-        gmp \
+    apt-get update && apt-get install -y --no-install-recommends \
         git \
-        ghc \
-        cabal \
-        stack; \
-    apk add --no-cache --virtual build-deps \
-        musl-dev \
-        zlib-dev \
-        gmp-dev \
-        ncurses-libs \
-        ncurses-dev \
-        xz;
-    #curl -sSL https://get.haskellstack.org/ | sh;
+        zlib1g-dev \
+        libncurses-dev; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
+# hadolint ignore=DL3003
 RUN set -eux; \
     git clone https://github.com/essandess/adblock2privoxy.git . --depth=1; \
     export STACK_ROOT=/usr/local/etc/.stack; \
@@ -72,11 +64,19 @@ RUN set -eux; \
     adblock2privoxy --version;
 
 
-FROM alpine:latest AS runtime
+FROM debian:stable-slim AS runtime
 
 ARG SYSTEM_EXTRA_PKGS="brotli net-tools"
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
+
+ENV PRIVOXY_PORT=8118 \
+    ADBLOCK_URLS="" \
+    ADBLOCK_NGINX_ENABLED=true \
+    ADBLOCK_CSS_DOMAIN="172.17.0.2" \
+    NGINX_SERVER_NAME="172.17.0.2" \
+    NGINX_PORT=80 \
+    NGINX_PORT_SSL=443
 
 # Create Privoxy User
 RUN set -ex; \
@@ -94,19 +94,24 @@ RUN set -ex; \
 
 # Add system tools
 RUN set -eux; \
-    apk add --no-cache --virtual runtime-deps \
+    apt-get update && apt-get install -y --no-install-recommends \
         python3 \
-        pcre2 \
+        pcre2-utils \
         openssl \
         nginx \
-        gmp \
-        ncurses \
-        $SYSTEM_EXTRA_PKGS;
+        libgmp-dev \
+        libncurses-dev \
+        ca-certificates \
+        gettext-base \
+        $SYSTEM_EXTRA_PKGS; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
 # Docker Entry Point
 COPY docker-entrypoint.sh /usr/local/sbin/
-RUN sed -i 's/\r$//' /usr/local/sbin/docker-entrypoint.sh && \
-        chmod +x /usr/local/sbin/docker-entrypoint.sh;
+RUN set -ex; \
+    sed -i 's/\r$//' /usr/local/sbin/docker-entrypoint.sh; \
+    chmod +x /usr/local/sbin/docker-entrypoint.sh;
 
 # Privman
 COPY data/rules/ /usr/local/etc/privoxy/privman-rules/
@@ -120,19 +125,46 @@ RUN set -ex; \
 
 # Privoxy
 COPY --from=build-privoxy /usr/local /usr/local
-COPY data/config /usr/local/etc/privoxy/
-# hadolint ignore=SC1003
+# hadolint ignore=SC1003,SC2016
 RUN set -ex; \
-    #mv /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \
     mkdir -p /var/log/privoxy /usr/local/etc/privoxy/CA /usr/local/etc/privoxy/certs /usr/local/etc/privoxy/privman-rules; \
     chown -R privoxy:privoxy /var/log/privoxy /usr/local/etc/privoxy; \
+    chmod +x /usr/local/sbin/privoxy; \
+    cp -a /usr/local/etc/privoxy /opt/privoxy-default; \
+    # Change the default config
+    cp /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \
     sed -i '/^+set-image-blocker{pattern}/a +https-inspection \\' /usr/local/etc/privoxy/match-all.action; \
-    cp -a /usr/local/etc/privoxy /opt/privoxy-default;
+    sed -i \
+        -e 's/^confdir .+/confdir \/usr\/local\/etc\/privoxy/' \
+        -e 's/^templdir .+/templdir \/usr\/local\/etc\/privoxy\/templates/' \
+        -e '/^actionsfile user.action/a actionsfile privman-rules\/user.action\nactionsfile ab2p.system.action\nactionsfile ab2p.action' \
+        -e '/^filterfile user.filter/a filterfile privman-rules\/user.filter\nfilterfile ab2p.system.filter\nfilterfile ab2p.filter' \
+        -e 's/^#debug     1.+/debug     1/' \
+        -e 's/^#debug   512.+/debug   512/' \
+        -e 's/^#debug  1024.+/debug  1024/' \
+        -e 's/^#debug  8192.+/debug  8192/' \
+        -e 's/^listen-address .+/listen-address  0.0.0.0:${PRIVOXY_PORT}/' \
+        -e 's/^enforce-blocks .+/#enforce-blocks 0/' \
+        -e 's/^buffer-limit .+/buffer-limit 25600/' \
+        -e 's/^keep-alive-timeout .+/keep-alive-timeout 120/' \
+        -e 's/^tolerate-pipelining .+/tolerate-pipelining 0/' \
+        -e 's/^socket-timeout .+/socket-timeout 30/' \
+        -e 's/^#max-client-connections .+/max-client-connections 256/' \
+        -e 's/^#listen-backlog .+/listen-backlog 128/' \
+        -e 's/^#ca-directory .+/ca-directory \/usr\/local\/etc\/privoxy\/CA/' \
+        -e 's/^#ca-cert-file .+/ca-cert-file privoxy-ca-bundle.crt/' \
+        -e 's/^#ca-key-file .+/ca-key-file cakey.pem/' \
+        -e 's/^#certificate-directory .+/certificate-directory \/usr\/local\/etc\/privoxy\/certs/' \
+        -e 's/^#trusted-cas-file .+/trusted-cas-file trustedCAs.pem/' \
+        -e '$a\receive-buffer-size 32768' \
+        -e '$a\cipher-list ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256' \
+    /usr/local/etc/privoxy/config; \
+    chmod +x /usr/local/sbin/privoxy;
 
 # adblock2privoxy
 COPY --from=build-adblock2privoxy /usr/local/bin/adblock2privoxy /usr/local/bin/adblock2privoxy
 COPY --from=build-adblock2privoxy /build/adblock2privoxy/templates /opt/local/share/adblock2privoxy/templates
-COPY data/nginx.conf /etc/nginx/nginx.conf
+COPY templates/nginx.conf.template /etc/nginx/nginx.conf.template
 RUN set -ex; \
     mkdir -p /usr/local/etc/adblock2privoxy/css; \
     echo "# Dummy file" | tee -a /usr/local/etc/privoxy/ab2p.system.action /usr/local/etc/privoxy/ab2p.action /usr/local/etc/privoxy/ab2p.system.filter /usr/local/etc/privoxy/ab2p.filter; \
@@ -146,15 +178,9 @@ RUN set -ex; \
     privoxy --version; \
     adblock2privoxy --version;
 
-# Common
-ENV ADBLOCK_URLS=""
-ENV ADBLOCK_CSS_DOMAIN="172.17.0.2:8119"
-
 ENTRYPOINT ["/usr/local/sbin/docker-entrypoint.sh"]
 
 VOLUME /usr/local/etc/privoxy
-EXPOSE 8118/tcp
-EXPOSE 8119/tcp
 
 USER privoxy
 

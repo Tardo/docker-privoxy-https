@@ -20,17 +20,31 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session")
-def docker_build(pytestconfig):
-    docker = DockerClient()
+def env_info(pytestconfig):
     no_cache = bool(pytestconfig.getoption("no_cache", False))
     privoxy_ver = pytestconfig.getoption("privoxy_version")
+    return {
+        "ip": IP_ADDRESS,
+        "ports": {
+            "privoxy": PRIVOXY_PORT,
+        },
+        "options": {
+            "no_cache": no_cache,
+            "privoxy_version": privoxy_ver,
+        },
+    }
+
+
+@pytest.fixture(scope="session")
+def docker_build(env_info):
+    docker = DockerClient()
     docker.build(
         ".",
         build_args={
-            "PRIVOXY_VERSION": privoxy_ver,
+            "PRIVOXY_VERSION": env_info["options"]["privoxy_version"],
         },
         tags=IMAGE_TAG_NAME,
-        cache=not no_cache,
+        cache=not env_info["options"]["no_cache"],
         target="runtime",
     )
     return docker
@@ -55,10 +69,10 @@ def docker_privoxy(docker_build):
             ],
             networks=["pytest-privoxy-network"],
             ip=IP_ADDRESS,
-            publish=[(PRIVOXY_PORT, PRIVOXY_PORT), ("8119", "8119")],
             envs={
                 "ADBLOCK_URLS": "https://easylist-downloads.adblockplus.org/easylist.txt",
-                "ADBLOCK_CSS_DOMAIN": f"{IP_ADDRESS}:8119",
+                "ADBLOCK_CSS_DOMAIN": IP_ADDRESS,
+                "NGINX_SERVER_NAME": IP_ADDRESS,
             },
             name="privoxy-pytest",
             remove=True,
@@ -88,7 +102,7 @@ def make_request():
                 "http": f"{IP_ADDRESS}:{PRIVOXY_PORT}",
                 "https": f"{IP_ADDRESS}:{PRIVOXY_PORT}",
             },
-            verify=f"./tests/privoxy-ca-bundle.crt" if use_privoxy_ca_bundle else None,
+            verify="./tests/privoxy-ca-bundle.crt" if use_privoxy_ca_bundle else None,
         )
 
     return _run

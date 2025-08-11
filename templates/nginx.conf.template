@@ -1,3 +1,5 @@
+user privoxy;
+
 worker_processes  auto;
 
 events {
@@ -8,24 +10,24 @@ events {
 pid /usr/local/etc/adblock2privoxy/nginx-adblock2privoxy.pid;
 
 # error_log /opt/local/var/log/nginx/error-adblock2privoxy.log warn;
-error_log off;
+error_log /dev/null;
 
 http {
   # access_log /opt/local/var/log/nginx/access-adblock2privoxy.log;
-  access_log off;
+  access_log /dev/null;
 
   # avoid error 413 Request Entity Too Large
   # client_max_body_size 64M;
   keepalive_timeout 65;
 
   server {
-    listen 0.0.0.0:8119;
+    listen ${NGINX_PORT};
     #ab2p css domain name (optional, should be equal to --domainCSS parameter)
-    server_name localhost;
+    server_name ${NGINX_SERVER_NAME};
 
-    listen 443 ssl;
-    ssl_certificate      /usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt;
-    ssl_certificate_key  /usr/local/etc/privoxy/CA/cakey.pem;
+    listen ${NGINX_PORT_SSL} ssl;
+    ssl_certificate      /usr/local/etc/privoxy/CA/nginx.crt;
+    ssl_certificate_key  /usr/local/etc/privoxy/CA/nginx.pem;
     # use modern crypto
     # https://ssl-config.mozilla.org
     ssl_protocols TLSv1.3;

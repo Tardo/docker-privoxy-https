@@ -1,8 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright  Alexandre Díaz <dev@redneboa.es>
 # Privoxy Manager
 
 import os
+import re
 import argparse
 import subprocess
 import urllib.request
@@ -35,7 +36,7 @@ def update_trusted_ca(forced=False):
         print_log("Trusted CA", "Nothing to do. The file already exists.")
 
 
-def generate_crt_bundle(subj, forced=False):
+def generate_crt_bundle(subj, subj_nginx, forced=False):
     ca_bundle_file = os.path.join(BASEDIR_CA, "privoxy-ca-bundle.crt")
     ca_key_file = os.path.join(BASEDIR_CA, "cakey.pem")
     if not os.path.isfile(ca_bundle_file) or forced:
@@ -50,8 +51,39 @@ def generate_crt_bundle(subj, forced=False):
             '-addext "subjectKeyIdentifier=hash"'
         )
         print_log("CRT Bundle", f"Generated successfully in '{ca_bundle_file}'")
+        generate_nginx_certs(subj_nginx, ca_bundle_file, ca_key_file)
     else:
         print_log("CRT Bundle", "Nothing to do. The file already exists.")
+
+
+def generate_nginx_certs(subj, ca_bundle_file, ca_key_file):
+    nginx_priv_key_file = os.path.join(BASEDIR_CA, "nginx.pem")
+    nginx_priv_csr_file = os.path.join(BASEDIR_CA, "nginx.csr")
+    nginx_cert_file = os.path.join(BASEDIR_CA, "nginx.crt")
+    nginx_cert_conf_file = os.path.join(BASEDIR_CA, "nginx.cnf")
+    nginx_sn = os.environ.get("NGINX_SERVER_NAME", "")
+    f_subj = f"{subj}/CN={nginx_sn}"
+    re_ipv4 = r"\d{1,3}\.\d{1,3}\.\d{1,3}.\d{1,3}"
+    with open(nginx_cert_conf_file, "w") as file:
+        if re.match(re_ipv4, nginx_sn):
+            file.write(f"subjectAltName=IP:{nginx_sn}")
+        else:
+            file.write(f"subjectAltName=DNS:{nginx_sn}")
+    os.system(
+        "openssl req -newkey rsa:2048 -nodes "
+        f"-keyout {nginx_priv_key_file} "
+        f"-out {nginx_priv_csr_file} "
+        f'-subj "{f_subj}" '
+    )
+    os.system(
+        "openssl x509 -req "
+        f"-in {nginx_priv_csr_file} "
+        f"-CA {ca_bundle_file} "
+        f"-CAkey {ca_key_file} "
+        f"-CAcreateserial -out {nginx_cert_file} -days 365 -sha256 "
+        f"-extfile {nginx_cert_conf_file}"
+    )
+    print_log("NGINX Certs", f"Generated successfully in '{nginx_cert_file}'")
 
 
 def init_adblock_filters():
@@ -256,6 +288,13 @@ if __name__ == "__main__":
         default="/C=ES/ST=Madrid/L=Madrid/O=DockerPrivoxy Security/OU=PROXY Department/CN=privoxy.proxy",
     )
     parser.add_argument(
+        "--nginx-subj",
+        type=str,
+        nargs=1,
+        help="SUBJ parameters for nginx certificate",
+        default="/C=ES/ST=Madrid/L=Madrid/O=DockerPrivoxy NGinx/OU=PROXY Department",
+    )
+    parser.add_argument(
         "--update-adblock-filters",
         help="Update Adblock Filters",
         action="store_true",
@@ -303,12 +342,14 @@ if __name__ == "__main__":
 
     if args.init:
         update_trusted_ca()
-        generate_crt_bundle(args.crt_bundle_subj)
+        generate_crt_bundle(args.crt_bundle_subj, args.nginx_subj)
         init_adblock_filters()
     if args.update_trusted_ca:
         need_restart = update_trusted_ca(forced=True)
     if args.regenerate_crt_bundle:
-        need_restart = generate_crt_bundle(args.crt_bundle_subj, forced=True)
+        need_restart = generate_crt_bundle(
+            args.crt_bundle_subj, args.nginx_subj, forced=True
+        )
     if args.update_adblock_filters:
         need_restart = update_adblock_filters()
     if args.add_whitelist:
