@@ -14,7 +14,7 @@ This means that this image also includes an nginx server so that the advanced CS
 This image downloads the 'trustedCAs' file from curl.se and also generates the ca-bundle file. So, you only need copy the 'ca-bundle' file and install it on your browser/system.
 
 - Check Privoxy Status: ```https://config.privoxy.org/show-status```
-- Check *ab2p* is working: ```https://<ADBLOCK_CSS_DOMAIN>/ab2p.common.css```
+- Check *ab2p* is fully operational (needs privoxy ca-bundle to verify SSL): ```https://<ADBLOCK_CSS_DOMAIN>/ab2p.common.css```
 
 ### Default Ports
 

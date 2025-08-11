@@ -90,6 +90,8 @@ def generate_nginx_certs(subj, ca_bundle_file, ca_key_file):
 
 
 def init_adblock_filters():
+    adblock_css_domain = os.environ.get("ADBLOCK_CSS_DOMAIN", "")
+    adblock_urls = os.environ.get("ADBLOCK_URLS", "").split(" ")
     subprocess.run(
         [
             "adblock2privoxy",
@@ -98,10 +100,10 @@ def init_adblock_filters():
             "-w",
             "/usr/local/etc/adblock2privoxy/css",
             "-d",
-            os.environ.get("ADBLOCK_CSS_DOMAIN", ""),
+            adblock_css_domain,
             "-t",
             "/usr/local/etc/privoxy/ab2p.task",
-            os.environ.get("ADBLOCK_URLS", ""),
+            *adblock_urls,
         ]
     )
     return True
