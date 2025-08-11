@@ -19,9 +19,9 @@ Privoxy Status Page: https://config.privoxy.org/show-status
 
 | PORT | Description | Required |
 |----------------|-------------|-------------|
-| 8118 | Privoxy | [x] |
-| 80 | Nginx | [] |
-| 443 | Nginx SSL | [] |
+| 8118 | Privoxy | :heavy_check_mark: |
+| 80 | Nginx |  |
+| 443 | Nginx SSL |  |
 
 
 ### Env. Variables
