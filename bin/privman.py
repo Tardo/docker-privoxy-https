@@ -54,6 +54,9 @@ def generate_crt_bundle(subj, subj_nginx, forced=False):
         generate_nginx_certs(subj_nginx, ca_bundle_file, ca_key_file)
     else:
         print_log("CRT Bundle", "Nothing to do. The file already exists.")
+        nginx_cert_file = os.path.join(BASEDIR_CA, "nginx.crt")
+        if not os.path.isfile(nginx_cert_file):
+            generate_nginx_certs(subj_nginx, ca_bundle_file, ca_key_file)
 
 
 def generate_nginx_certs(subj, ca_bundle_file, ca_key_file):
@@ -281,6 +284,12 @@ if __name__ == "__main__":
         default=False,
     )
     parser.add_argument(
+        "--regenerate-nginx-certs",
+        help="Regenerate nginx certificates",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument(
         "--crt-bundle-subj",
         type=str,
         nargs=1,
@@ -349,6 +358,12 @@ if __name__ == "__main__":
     if args.regenerate_crt_bundle:
         need_restart = generate_crt_bundle(
             args.crt_bundle_subj, args.nginx_subj, forced=True
+        )
+    if args.regenerate_nginx_certs:
+        ca_bundle_file = os.path.join(BASEDIR_CA, "privoxy-ca-bundle.crt")
+        ca_key_file = os.path.join(BASEDIR_CA, "cakey.pem")
+        need_restart = generate_nginx_certs(
+            args.nginx_subj, ca_bundle_file, ca_key_file
         )
     if args.update_adblock_filters:
         need_restart = update_adblock_filters()

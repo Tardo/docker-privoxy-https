@@ -79,6 +79,7 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 
 - Update the Trusted CA file: `docker exec privoxy privman --update-trusted-ca`
 - Regenerate the .crt bundle: `docker exec privoxy privman --regenerate-crt-bundle`
+- Regenerate nginx certificates: `docker exec privoxy privman --regenerate-nginx-certs`
 - Update 'adblock' filters: `docker exec privoxy privman --update-adblock-filters`
 - Add a domain to the blocklist: `docker exec privoxy privman --add-blocklist .google. .facebook.`
 - Remove a domain from the blocklist: `docker exec privoxy privman --remove-blocklist .facebook.`
