@@ -1,7 +1,11 @@
+# Set worker processes to auto for optimal CPU core utilization
 worker_processes  auto;
 
 events {
-    worker_connections  64;
+    # Increase worker_connections for better concurrency handling
+    worker_connections 1024;
+    # Enable epoll for better performance on Linux systems
+    use epoll;
 }
 
 # this must be consistent with daemondo's --pidfile specification
@@ -14,9 +18,17 @@ http {
   # access_log /opt/local/var/log/nginx/access-adblock2privoxy.log;
   access_log /dev/null;
 
-  # avoid error 413 Request Entity Too Large
-  # client_max_body_size 64M;
-  keepalive_timeout 65;
+  # Increase client_max_body_size to handle larger requests, uncommented for clarity
+  client_max_body_size 64M;
+  # Optimize keepalive_timeout for better connection reuse
+  keepalive_timeout 65s;
+  # Enable keepalive to upstream servers
+  keepalive_requests 100;
+
+  # Improve performance with sendfile and tcp_nopush
+  sendfile on;
+  tcp_nopush on;
+  tcp_nodelay on;
 
   server {
     listen ${NGINX_PORT};
@@ -28,11 +40,15 @@ http {
     ssl_certificate_key  /usr/local/etc/privoxy/CA/nginx.pem;
     # use modern crypto
     # https://ssl-config.mozilla.org
-    ssl_protocols TLSv1.3;
-    ssl_ecdh_curve X25519:prime256v1:secp384r1;
+    ssl_protocols TLSv1.3 TLSv1.2; # Include TLSv1.2 for broader compatibility
+    ssl_ecdh_curve X25519:prime256v1:secp384r1:secp521r1;
     ssl_prefer_server_ciphers off;
-    # HSTS (ngx_http_headers_module is required) (63072000 seconds)
-    add_header Strict-Transport-Security "max-age=63072000" always;
+    # Enable session resumption for performance
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off; # Disable session tickets for security
+    # HSTS for 2 years, including subdomains
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 
     #root = --webDir parameter value
     root /usr/local/etc/adblock2privoxy/css;
@@ -48,6 +64,7 @@ http {
 
     location ~ ^/@blackhole {
       default_type text/html;
+      add_header Content-Security-Policy "default-src 'none'; style-src 'self';";
       return 200 "<!DOCTYPE html>\n<html>\n<head>\n<meta charset='utf-8'>\n</head>\n<body>\n<p><a href=\"https://github.com/essandess/adblock2privoxy\">adblock2privoxy</a> blackhole 🕳</p>\n</body>\n</html>\n";
       # rewrite ^ /default.html break;
     }
@@ -56,6 +73,7 @@ http {
       # ab2p.css in top-level directory
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
+      add_header Cache-Control "public, max-age=31536000, immutable";
       try_files $uri $1;
     }
 
@@ -63,6 +81,7 @@ http {
       # first reverse domain names order
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
+      add_header Cache-Control "public, max-age=31536000, immutable";
       rewrite ^/([^/]*?)\.([^/.]+)(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?/ab2p.css$ /$9/$8/$7/$6/$5/$4/$3/$2/$1/ab2p.css last;
     }
 
@@ -71,6 +90,7 @@ http {
       # if it is unavailable - get CSS for parent domain
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
+      add_header Cache-Control "public, max-age=31536000, immutable";
       try_files $uri $1ab2p.css;
     }
   }
