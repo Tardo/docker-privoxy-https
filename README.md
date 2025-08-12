@@ -7,14 +7,17 @@ Image with [privoxy](https://www.privoxy.org) enabled and configured to work wit
 It also includes '[adblock2privoxy](https://github.com/essandess/adblock2privoxy)' to translate adblock rules to privoxy with CSS hidden elements & blackhole.
 This means that this image also includes an nginx server so that the advanced CSS rules work correctly.
 
-**The default configuration is intended for personal use only (ex. raspberry)**
-
 ## :bulb: Documentation
 
 This image downloads the 'trustedCAs' file from curl.se and also generates the ca-bundle file. So, you only need copy the 'ca-bundle' file and install it on your browser/system.
 
 - Check Privoxy Status: ```https://config.privoxy.org/show-status```
 - Check *ab2p* is fully operational (needs privoxy ca-bundle to verify SSL): ```https://<ADBLOCK_CSS_DOMAIN>/ab2p.common.css```
+
+### Notes
+
+- The default configuration is intended for personal use only
+- If you use ab2p rules, make sure that the routing to the service is configured correctly. Otherwise, you will experience significant loading delays. You can see a basic example in ```docs/traefik.md```.
 
 ### Default Ports
 
