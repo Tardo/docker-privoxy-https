@@ -80,14 +80,13 @@ ENV PRIVOXY_PORT=8118 \
 
 # Create Privoxy User
 RUN set -ex; \
-    addgroup --gid 7777 --system privoxy; \
-    adduser \
-        --disabled-password \
-        --home /var/lib/privoxy/ \
-        --ingroup privoxy \
+    groupadd --gid 7777 --system privoxy; \
+    useradd \
+        --home-dir /var/lib/privoxy/ \
         --no-create-home \
         --system \
         --uid 7777 \
+        --gid 7777 \
         privoxy; \
     mkdir /var/lib/privoxy/; \
     chown privoxy:privoxy /var/lib/privoxy/;
