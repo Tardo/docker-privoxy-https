@@ -39,6 +39,8 @@ RUN set -eux; \
 
 FROM haskell:slim AS build-adblock2privoxy
 
+ARG ADBLOCK2PRIVOXY_RESOLVER=lts-21.25
+
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 WORKDIR /build
@@ -54,10 +56,11 @@ RUN set -eux; \
 # hadolint ignore=DL3003
 RUN set -eux; \
     git clone https://github.com/essandess/adblock2privoxy.git . --depth=1; \
+    export STACK_ROOT=/usr/local/etc/.stack; \
     cd adblock2privoxy; \
-    stack setup --install-ghc; \
-    stack build --allow-newer; \
-    stack install --allow-newer --local-bin-path /usr/local/bin; \
+    stack setup --allow-different-user --resolver $ADBLOCK2PRIVOXY_RESOLVER; \
+    stack build --allow-different-user --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
+    stack install --allow-different-user --local-bin-path /usr/local/bin --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
     adblock2privoxy --version;
 
 
