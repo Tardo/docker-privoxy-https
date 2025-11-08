@@ -88,9 +88,9 @@ def docker_privoxy(docker_build):
         if container:
             docker_build.container.kill(container)
             time.sleep(5)  # Wait for docker
+            docker_build.volume.remove("pytest-privoxy")
         if network:
             docker_build.network.remove("pytest-privoxy-network")
-        docker_build.volume.remove("pytest-privoxy")
 
 
 @pytest.fixture(scope="session")

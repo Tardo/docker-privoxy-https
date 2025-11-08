@@ -132,8 +132,7 @@ RUN set -ex; \
     # Change the default config
     mv /usr/local/etc/privoxy/config /usr/local/etc/privoxy/config.orig; \
     sed -i '/^+set-image-blocker{pattern}/a +https-inspection \\' /usr/local/etc/privoxy/match-all.action; \
-    cp -a /usr/local/etc/privoxy /opt/privoxy-default; \
-    chmod +x /usr/local/sbin/privoxy;
+    cp -a /usr/local/etc/privoxy /opt/privoxy-default;
 
 # adblock2privoxy
 COPY --from=build-adblock2privoxy /usr/local/bin/adblock2privoxy /usr/local/bin/adblock2privoxy
