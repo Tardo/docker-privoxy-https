@@ -41,7 +41,7 @@ jobs:
             ${{ runner.os }}-buildx-
       - name: Check out repo
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Prepare env variables
         id: env
@@ -54,7 +54,7 @@ jobs:
       - name: Build and push latest stable branch
         if: ${{ env.BUILD_VER == env.LASTEST_VERSION }}
         id: docker_build_latest
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -82,7 +82,7 @@ jobs:
       - name: Build and push everything else
         if: ${{ env.BUILD_VER != env.LASTEST_VERSION }}
         id: docker_build_regular
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
