@@ -1,3 +1,4 @@
 # Allow load ab2p resources from sites with CSP policies applied
 SERVER-HEADER-FILTER: allow-custom-css "Add ${NGINX_SERVER_NAME} to style-src in CSP"
-s/^Content-Security-Policy:\s*(.*)/Content-Security-Policy: $1; style-src https:\/\/${NGINX_SERVER_NAME}/i
+s/(style-src\s+)([^;]*)(;)/$1$2 ${NGINX_SERVER_NAME}$3/gmi
+s/^Content-Security-Policy:\s+(?!.*style-src)(.*)$/Content-Security-Policy: $1; style-src ${NGINX_SERVER_NAME}/mi
