@@ -7,6 +7,8 @@ if $ADBLOCK_NGINX_ENABLED && [ -n "$ADBLOCK_URLS" ]; then
   nginx
 fi
 
+envsubst '$NGINX_SERVER_NAME' < /usr/local/etc/privoxy/privman-rules/common.filter.template > /usr/local/etc/privoxy/privman-rules/common.filter
+
 if [ ! -e /usr/local/etc/privoxy/config ] || [ -z "$(ls -A /usr/local/etc/privoxy)" ]; then
   echo "[entrypoint] void config, populating defaults..."
   cp -a /opt/privoxy-default/* /usr/local/etc/privoxy/
@@ -14,8 +16,8 @@ if [ ! -e /usr/local/etc/privoxy/config ] || [ -z "$(ls -A /usr/local/etc/privox
   sed -i \
     -e 's/^confdir .*/confdir \/usr\/local\/etc\/privoxy/' \
     -e 's/^templdir .*/templdir \/usr\/local\/etc\/privoxy\/templates/' \
-    -e '/^actionsfile user.action/a actionsfile privman-rules\/user.action\nactionsfile ab2p.system.action\nactionsfile ab2p.action' \
-    -e '/^filterfile user.filter/a filterfile privman-rules\/user.filter\nfilterfile ab2p.system.filter\nfilterfile ab2p.filter' \
+    -e '/^actionsfile user.action/a actionsfile privman-rules\/user.action\nactionsfile privman-rules\/common.action\nactionsfile ab2p.system.action\nactionsfile ab2p.action' \
+    -e '/^filterfile user.filter/a filterfile privman-rules\/user.filter\nfilterfile privman-rules\/common.filter\nfilterfile ab2p.system.filter\nfilterfile ab2p.filter' \
     -e 's/^listen-address .*/listen-address  0.0.0.0:'"${PRIVOXY_PORT}"'/' \
     -e 's/^enforce-blocks .*/#enforce-blocks 0/' \
     -e 's/^buffer-limit .*/buffer-limit 25600/' \

@@ -102,3 +102,9 @@ class TestPrivoxyContainer:
         time.sleep(3)
         resp = make_request("https://google.com")
         assert resp.status_code == 200
+
+    def test_csp(self, docker_privoxy, make_request, env_info):
+        resp = make_request("https://www.linkedin.com")
+        assert resp.status_code == 200
+        csp = resp.headers.get("Content-Security-Policy")
+        assert env_info["ip"] in csp

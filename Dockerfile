@@ -114,6 +114,7 @@ RUN set -ex; \
 
 # Privman
 COPY data/rules/ /usr/local/etc/privoxy/privman-rules/
+COPY templates/common.filter.template /usr/local/etc/privoxy/privman-rules/
 COPY bin/privman.py /var/lib/privoxy/privman.py
 RUN set -ex; \
     sed -i 's/\r$//' /var/lib/privoxy/privman.py; \

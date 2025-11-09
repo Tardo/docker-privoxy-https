@@ -1,0 +1,2 @@
+{ +server-header-filter{allow-custom-css} }
+.*
