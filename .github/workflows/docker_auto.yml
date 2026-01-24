@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - 4.1.0
-      - 4.0.0
 jobs:
   tests:
     uses: ./.github/workflows/test.yml
@@ -16,8 +15,8 @@ jobs:
     env:
       DOCKER_PLATFORMS: linux/amd64,linux/arm64
       DOCKER_IMAGE: ghtardo/docker-privoxy-https
-      LASTEST_VERSION: "4.1.0"
-      PRIVOXY_VERSION: "4.1.0"
+      LASTEST_VERSION: "${{ github.event.repository.default_branch }}"
+      PRIVOXY_VERSION: "${{ github.ref_name }}"
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

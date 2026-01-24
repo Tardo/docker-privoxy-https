@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request:
-    branches: [4.1.0, 4.0.0]
+    branches: [4.1.0]
   workflow_call:
 
 jobs:
@@ -38,17 +38,13 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   privoxy:
-    strategy:
-      matrix:
-        privoxy_version: [4.1.0, 4.0.0]
-        python-version: [3.13]
-      fail-fast: false
     runs-on: ubuntu-latest
     needs: pre-commit
     env:
       DEBIAN_FRONTEND: noninteractive
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
+      PYTHON_VERSION: "3.13"
 
     steps:
       - uses: actions/cache@v4
@@ -69,7 +65,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v3
@@ -82,4 +78,4 @@ jobs:
           poetry install
 
       - name: Run pytest
-        run: poetry run pytest --privoxy-version ${{ matrix.privoxy_version }} --no-cache -v
+        run: poetry run pytest --privoxy-version ${{ github.ref_name }} --no-cache -v
