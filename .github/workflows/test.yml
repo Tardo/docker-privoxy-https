@@ -2,7 +2,7 @@ name: Test
 
 on:
   pull_request:
-    branches: [4.0.0]
+    branches: [4.1.0, 4.0.0]
   workflow_call:
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
   privoxy:
     strategy:
       matrix:
-        privoxy_version: [4.0.0]
+        privoxy_version: [4.1.0, 4.0.0]
         python-version: [3.13]
       fail-fast: false
     runs-on: ubuntu-latest
