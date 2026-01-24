@@ -9,7 +9,6 @@ import subprocess
 import urllib.request
 import signal
 
-
 BASE_LIB_DIR = "/var/lib/privoxy"
 BASE_DIR = "/usr/local/etc/privoxy"
 BASEDIR_CA = os.path.join(BASE_DIR, "CA")
