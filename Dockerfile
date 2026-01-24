@@ -1,7 +1,7 @@
 FROM debian:stable-slim AS build-privoxy
 
-ARG PRIVOXY_VERSION=4.0.0
-ARG PRIVOXY_SRC_SHA1SUM=d302cb0bf23536e67a1b5505d01486a335d9c4c0
+ARG PRIVOXY_VERSION=4.1.0
+ARG PRIVOXY_SRC_SHA1SUM=6afc12dc38781a37670c7e4bb69700900123084f
 ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli"
 ARG PRIVOXY_BUILD_EXTRA="libssl-dev libbrotli-dev"
 
