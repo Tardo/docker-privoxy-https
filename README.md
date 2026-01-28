@@ -135,3 +135,4 @@ docker cp privoxy:/usr/local/etc/privoxy/CA/privoxy-ca-bundle.crt .
 - --disable-force
 - --with-openssl
 - --with-brotli
+- --with-zstd

@@ -2,8 +2,8 @@ FROM debian:stable-slim AS build-privoxy
 
 ARG PRIVOXY_VERSION=4.1.0
 ARG PRIVOXY_SRC_SHA1SUM=6afc12dc38781a37670c7e4bb69700900123084f
-ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli"
-ARG PRIVOXY_BUILD_EXTRA="libssl-dev libbrotli-dev"
+ARG PRIVOXY_CONFIG_OPTIONS="--disable-toggle --disable-editor --disable-force --with-openssl --with-brotli --with-zstd"
+ARG PRIVOXY_BUILD_EXTRA="libssl-dev libbrotli-dev libzstd-dev"
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
@@ -66,7 +66,7 @@ RUN set -eux; \
 
 FROM debian:stable-slim AS runtime
 
-ARG SYSTEM_EXTRA_PKGS="brotli net-tools"
+ARG SYSTEM_EXTRA_PKGS="brotli libzstd1 net-tools"
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
