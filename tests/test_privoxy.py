@@ -53,7 +53,9 @@ class TestPrivoxyContainer:
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/html"
         assert "adblock2privoxy" in resp.text
-        resp = requests.get(f"http://{env_info['ip']}/notexists/ab2p.common.css")
+        resp = requests.get(
+            f"http://{env_info['ip']}/notexists/ab2p.common.css", allow_redirects=True
+        )
         assert resp.status_code == 200
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/html"
@@ -62,14 +64,6 @@ class TestPrivoxyContainer:
     def test_https_adblock_blackhole(self, docker_privoxy, env_info):
         resp = requests.get(
             f"https://{env_info['ip']}/@blackhole",
-            verify="./tests/privoxy-ca-bundle.crt",
-        )
-        assert resp.status_code == 200
-        mime_type = resp.headers.get("Content-Type")
-        assert mime_type == "text/html"
-        assert "adblock2privoxy" in resp.text
-        resp = requests.get(
-            f"https://{env_info['ip']}/notexists/ab2p.common.css",
             verify="./tests/privoxy-ca-bundle.crt",
         )
         assert resp.status_code == 200

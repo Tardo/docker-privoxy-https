@@ -12,11 +12,11 @@ events {
 pid /usr/local/etc/adblock2privoxy/nginx-adblock2privoxy.pid;
 
 # error_log /opt/local/var/log/nginx/error-adblock2privoxy.log warn;
-error_log /dev/null;
+error_log stderr warn;
 
 http {
   # access_log /opt/local/var/log/nginx/access-adblock2privoxy.log;
-  access_log /dev/null;
+  access_log /dev/stdout;
 
   # Increase client_max_body_size to handle larger requests, uncommented for clarity
   client_max_body_size 64M;
