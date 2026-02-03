@@ -47,14 +47,19 @@ class TestPrivoxyContainer:
         except ConnectionError:
             pass  # 99% blocked by external software
 
-    def test_http_adblock_blackhole(self, docker_privoxy, make_request, env_info):
+    def test_http_adblock_blackhole(self, docker_privoxy, env_info):
         resp = requests.get(f"http://{env_info['ip']}/@blackhole")
         assert resp.status_code == 200
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/html"
         assert "adblock2privoxy" in resp.text
+        resp = requests.get(f"http://{env_info['ip']}/notexists/ab2p.common.css")
+        assert resp.status_code == 200
+        mime_type = resp.headers.get("Content-Type")
+        assert mime_type == "text/html"
+        assert "adblock2privoxy" in resp.text
 
-    def test_https_adblock_blackhole(self, docker_privoxy, make_request, env_info):
+    def test_https_adblock_blackhole(self, docker_privoxy, env_info):
         resp = requests.get(
             f"https://{env_info['ip']}/@blackhole",
             verify="./tests/privoxy-ca-bundle.crt",
@@ -63,14 +68,22 @@ class TestPrivoxyContainer:
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/html"
         assert "adblock2privoxy" in resp.text
+        resp = requests.get(
+            f"https://{env_info['ip']}/notexists/ab2p.common.css",
+            verify="./tests/privoxy-ca-bundle.crt",
+        )
+        assert resp.status_code == 200
+        mime_type = resp.headers.get("Content-Type")
+        assert mime_type == "text/html"
+        assert "adblock2privoxy" in resp.text
 
-    def test_http_adblock_css_filters(self, docker_privoxy, make_request, env_info):
+    def test_http_adblock_css_filters(self, docker_privoxy, env_info):
         resp = requests.get(f"http://{env_info['ip']}/ab2p.common.css")
         assert resp.status_code == 200
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/css"
 
-    def test_https_adblock_css_filters(self, docker_privoxy, make_request, env_info):
+    def test_https_adblock_css_filters(self, docker_privoxy, env_info):
         resp = requests.get(
             f"https://{env_info['ip']}/ab2p.common.css",
             verify="./tests/privoxy-ca-bundle.crt",

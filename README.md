@@ -18,6 +18,7 @@ This image downloads the 'trustedCAs' file from curl.se and also generates the c
 
 - The default configuration is intended for personal use only
 - If you use ab2p rules, make sure that the routing to the service is configured correctly. Otherwise, you will experience significant loading delays. You can see a basic example in ```docs/traefik.md```.
+- Also check that the adblock2privoxy URL is not being blocked by the proxy itself
 
 ### Default Ports
 
