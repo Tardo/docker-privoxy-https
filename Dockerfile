@@ -55,7 +55,7 @@ RUN set -eux; \
 
 # hadolint ignore=DL3003
 RUN set -eux; \
-    git clone https://github.com/essandess/adblock2privoxy.git . --depth=1; \
+    git clone https://github.com/tardo/adblock2privoxy.git . --depth=1; \
     export STACK_ROOT=/usr/local/etc/.stack; \
     cd adblock2privoxy; \
     stack setup --allow-different-user --resolver $ADBLOCK2PRIVOXY_RESOLVER; \
