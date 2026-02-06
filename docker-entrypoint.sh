@@ -1,8 +1,12 @@
 #!/bin/sh
 set -e
+
+echo "[entrypoint] loading privoxy environment...";
+
 privman --init
 
 if $ADBLOCK_NGINX_ENABLED && [ -n "$ADBLOCK_URLS" ]; then
+  print "[entrypoint] launching nginx..."
   envsubst '$NGINX_SERVER_NAME $NGINX_PORT $NGINX_PORT_SSL' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
   nginx
 fi
