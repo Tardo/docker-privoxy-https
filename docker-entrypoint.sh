@@ -1,12 +1,13 @@
 #!/bin/sh
 set -e
 
-echo "[entrypoint] loading privoxy environment...";
+echo "[entrypoint] loading privoxy environment..."
 
 privman --init
 
+
 if $ADBLOCK_NGINX_ENABLED && [ -n "$ADBLOCK_URLS" ]; then
-  print "[entrypoint] launching nginx..."
+  echo "[entrypoint] launching nginx..."
   envsubst '$NGINX_SERVER_NAME $NGINX_PORT $NGINX_PORT_SSL' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
   nginx
 fi
@@ -20,8 +21,8 @@ if [ ! -e /usr/local/etc/privoxy/config ] || [ -z "$(ls -A /usr/local/etc/privox
   sed -i \
     -e 's/^confdir .*/confdir \/usr\/local\/etc\/privoxy/' \
     -e 's/^templdir .*/templdir \/usr\/local\/etc\/privoxy\/templates/' \
-    -e '/^actionsfile user.action/a actionsfile privman-rules\/user.action\nactionsfile privman-rules\/common.action\nactionsfile ab2p.system.action\nactionsfile ab2p.action' \
-    -e '/^filterfile user.filter/a filterfile privman-rules\/user.filter\nfilterfile privman-rules\/common.filter\nfilterfile ab2p.system.filter\nfilterfile ab2p.filter' \
+    -e '/^actionsfile user.action/a actionsfile ab2p.system.action\nactionsfile ab2p.action\nactionsfile privman-rules\/user.action\nactionsfile privman-rules\/common.action' \
+    -e '/^filterfile user.filter/a filterfile ab2p.system.filter\nfilterfile ab2p.filter\nfilterfile privman-rules\/user.filter\nfilterfile privman-rules\/common.filter' \
     -e 's/^listen-address .*/listen-address  0.0.0.0:'"${PRIVOXY_PORT}"'/' \
     -e 's/^enforce-blocks .*/#enforce-blocks 0/' \
     -e 's/^buffer-limit .*/buffer-limit 25600/' \
