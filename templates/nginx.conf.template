@@ -50,6 +50,7 @@ http {
     # HSTS for 2 years, including subdomains
     add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
     add_header Access-Control-Allow-Origin "*" always;
+    add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
 
     #root = --webDir parameter value
     root /usr/local/etc/adblock2privoxy/css;
@@ -66,6 +67,7 @@ http {
     location ~ ^/@blackhole {
       default_type text/html;
       add_header Content-Security-Policy "default-src 'none'; style-src 'self';";
+      add_header Access-Control-Allow-Origin "*" always;
       return 200 "<!DOCTYPE html>\n<html>\n<head>\n<meta charset='utf-8'>\n</head>\n<body>\n<p><a href=\"https://github.com/essandess/adblock2privoxy\">adblock2privoxy</a> blackhole 🕳</p>\n</body>\n</html>\n";
       # rewrite ^ /default.html break;
     }
@@ -75,6 +77,7 @@ http {
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
       add_header Cache-Control "public, max-age=31536000, immutable";
+      add_header Access-Control-Allow-Origin "*" always;
       try_files $uri $1;
     }
 
@@ -83,6 +86,7 @@ http {
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
       add_header Cache-Control "public, max-age=31536000, immutable";
+      add_header Access-Control-Allow-Origin "*" always;
       rewrite ^/([^/]*?)\.([^/.]+)(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?(?:\.([^/.]+))?/ab2p.css$ /$9/$8/$7/$6/$5/$4/$3/$2/$1/ab2p.css last;
     }
 
@@ -92,6 +96,7 @@ http {
       default_type text/css;
       add_header X-Content-Type-Options nosniff;
       add_header Cache-Control "public, max-age=31536000, immutable";
+      add_header Access-Control-Allow-Origin "*" always;
       try_files $uri $1ab2p.css;
     }
   }

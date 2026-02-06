@@ -76,6 +76,8 @@ class TestPrivoxyContainer:
         assert resp.status_code == 200
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/css"
+        access_control = resp.headers.get("Access-Control-Allow-Origin")
+        assert access_control == "*"
 
     def test_https_adblock_css_filters(self, docker_privoxy, env_info):
         resp = requests.get(
@@ -85,6 +87,8 @@ class TestPrivoxyContainer:
         assert resp.status_code == 200
         mime_type = resp.headers.get("Content-Type")
         assert mime_type == "text/css"
+        access_control = resp.headers.get("Access-Control-Allow-Origin")
+        assert access_control == "*"
 
     def test_http_privman_blocklist(self, docker_privoxy, make_request, exec_privman):
         resp = exec_privman(docker_privoxy, "--add-blocklist", ".google.")
