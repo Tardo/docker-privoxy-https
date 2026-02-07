@@ -37,9 +37,9 @@ RUN set -eux; \
     privoxy --version;
 
 
-FROM haskell:slim AS build-adblock2privoxy
+FROM haskell:9.10.3-slim-bookworm AS build-adblock2privoxy
 
-ARG ADBLOCK2PRIVOXY_RESOLVER=lts-21.25
+ARG ADBLOCK2PRIVOXY_RESOLVER=lts-24.29
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
@@ -58,9 +58,9 @@ RUN set -eux; \
     git clone https://github.com/tardo/adblock2privoxy.git . --depth=1; \
     export STACK_ROOT=/usr/local/etc/.stack; \
     cd adblock2privoxy; \
-    stack setup --allow-different-user --resolver $ADBLOCK2PRIVOXY_RESOLVER; \
-    stack build --allow-different-user --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
-    stack install --allow-different-user --local-bin-path /usr/local/bin --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
+    stack setup --system-ghc --no-install-ghc --resolver $ADBLOCK2PRIVOXY_RESOLVER; \
+    stack build --system-ghc --no-install-ghc --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
+    stack install --system-ghc --no-install-ghc --local-bin-path /usr/local/bin --resolver $ADBLOCK2PRIVOXY_RESOLVER --allow-newer; \
     adblock2privoxy --version;
 
 
